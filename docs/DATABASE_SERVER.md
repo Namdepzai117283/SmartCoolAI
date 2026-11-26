@@ -114,11 +114,13 @@ Server chỉ cần **Client ID** (không cần Client Secret, vì server tự ki
    - **Authorized JavaScript origins** thêm 2 dòng:
      - `http://localhost:5000`
      - `https://smartcool-ai-api.onrender.com`
+     - `https://smartcoolai.vercel.app` (trang web chính)
    - (không cần Redirect URI) → Create.
 4. Copy chuỗi **Client ID** (dạng `1234…-abc.apps.googleusercontent.com`) rồi dán vào:
    - Máy: `backend/.env` → `GOOGLE_CLIENT_ID=...` rồi chạy lại server.
    - Render: Service → **Environment** → Add `GOOGLE_CLIENT_ID` → Save (Render tự deploy lại).
-5. Mở `/admin` → thấy nút **Sign in with Google**.
+5. Mở trang web (`https://smartcoolai.vercel.app`) hoặc `/admin` → nút Google chuyển thành nút chính thức của Google.
+   Khi chưa có Client ID, bấm nút Google sẽ báo "Máy chủ chưa bật đăng nhập Google".
 
 Cách hoạt động: trình duyệt lấy `id_token` từ Google → gửi `POST /api/auth/google { idToken }` →
 server kiểm tra chữ ký + `aud` = Client ID + email đã xác minh → tìm user theo `googleId`, nếu chưa có thì
