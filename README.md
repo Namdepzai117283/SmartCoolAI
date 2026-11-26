@@ -25,3 +25,5 @@ npm run dev                   # http://localhost:5000/api/health
 Windows: bấm đúp `backend/CHAY-BACKEND.cmd`.
 
 Tài khoản mẫu: `admin@smartcool.vn / Admin@123456` · `demo@smartcool.vn / Demo@123456`
+
+**Trang quản trị**: chạy backend rồi mở `http://localhost:5000/admin` (nhân viên: `kho@`, `cskh@`, `ktv.hung@smartcool.vn` / `Staff@123456`). Đăng nhập Google: đặt `GOOGLE_CLIENT_ID` (xem `docs/DATABASE_SERVER.md` mục 5).

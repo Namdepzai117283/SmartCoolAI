@@ -20,7 +20,7 @@ import {
 interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
-    role: 'USER' | 'ADMIN';
+    role: import('../config/permissions').AuthRole;
   };
 }
 

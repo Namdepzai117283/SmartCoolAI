@@ -50,7 +50,7 @@ export function mapPrismaError(error: unknown): AppError | null {
 // Mỗi controller chỉ cần: đọc req → gọi service → trả JSON.
 // ==========================================
 
-type Action = (req: AuthenticatedRequest) => Promise<unknown>;
+export type Action = (req: AuthenticatedRequest) => Promise<unknown>;
 
 export function handle(action: Action, successStatus = 200) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -74,9 +74,11 @@ export function currentUserId(req: AuthenticatedRequest): string {
   return req.user.userId;
 }
 
+// Nhân viên (mọi vai trò trừ USER) được xem cả dữ liệu ẩn/nháp
 export function isAdmin(req: AuthenticatedRequest): boolean {
-  return req.user?.role === 'ADMIN';
+  return Boolean(req.user && req.user.role !== 'USER');
 }
+
 
 // Phân trang chung: ?page=1&limit=20
 export const paginationSchema = z.object({
@@ -90,4 +92,16 @@ export function paginate(page: number, limit: number) {
 
 export function pageResult<T>(items: T[], total: number, page: number, limit: number) {
   return { items, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } };
+}
+
+// Người thực hiện thao tác (dùng để ghi Audit Log)
+export interface Actor {
+  userId: string;
+  role: string;
+  ip?: string;
+}
+
+export function actorOf(req: AuthenticatedRequest): Actor {
+  if (!req.user) throw new AppError(401, 'Bạn chưa đăng nhập.');
+  return { userId: req.user.userId, role: req.user.role, ip: req.ip };
 }

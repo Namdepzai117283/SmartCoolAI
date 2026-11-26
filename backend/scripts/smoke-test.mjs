@@ -98,6 +98,50 @@ await call('GET', '/admin/stats', { token: adminToken });
 await call('GET', '/admin/stats', { token: user, expect: [403] });
 await call('GET', '/admin/users?q=test', { token: adminToken });
 
+// --- GOOGLE LOGIN (chưa cấu hình thì phải báo rõ, không crash) ---
+const gcfg = await call('GET', '/auth/google/config');
+console.log('   → Google enabled:', gcfg?.enabled);
+await call('POST', '/auth/google', { body: { idToken: 'gia-mao' }, expect: gcfg?.enabled ? [401] : [503] });
+
+// --- ADMIN: dashboard, IoT, ticket, RBAC ---
+const staff = async (e) => (await call('POST', '/auth/login', { body: { email: e, password: 'Staff@123456' } }))?.accessToken;
+const kho = await staff('kho@smartcool.vn');
+const cskh = await staff('cskh@smartcool.vn');
+const ktv = await staff('ktv.hung@smartcool.vn');
+const dash = await call('GET', '/admin/dashboard', { token: adminToken });
+check(`Dashboard: ${dash?.kpi?.totalDevices} thiết bị, ${dash?.kpi?.error} lỗi, ${dash?.urgentAlerts?.length} cảnh báo`, dash?.kpi?.totalDevices > 0);
+const meKtv = await call('GET', '/admin/me', { token: ktv });
+check(`Kỹ thuật viên có quyền: ${meKtv?.permissions?.join(', ')}`, meKtv?.permissions?.includes('tickets:work') && !meKtv?.permissions?.includes('users:read'));
+await call('GET', '/admin/dashboard', { token: user, expect: [403] });         // khách hàng không vào admin
+await call('PUT', '/admin/settings', { token: cskh, body: { 'alert.maxTemperature': 40 }, expect: [403] }); // CSKH không sửa cấu hình
+await call('GET', '/admin/users', { token: ktv, expect: [403] });              // KTV không xem danh sách người dùng
+await call('POST', '/admin/firmware', { token: cskh, body: {}, expect: [403] }); // CSKH không phát hành firmware
+await call('GET', '/admin/error-codes?q=E5', { token: kho });
+
+const devs = await call('GET', '/admin/devices?status=ONLINE&limit=1', { token: adminToken });
+const dev = devs?.items?.[0];
+await call('GET', `/admin/devices/${dev?.id}`, { token: kho });
+const sim = await call('POST', `/admin/devices/${dev?.id}/simulate`, { token: adminToken, body: { scenario: 'gas' } });
+check(`Giả lập rò gas → mã lỗi ${sim?.errorCode} (${sim?.severity}), phiếu ${sim?.ticket?.code}`, sim?.errorCode === 'GAS-LOW' && sim?.severity === 'CRITICAL');
+const auto = await call('GET', `/admin/tickets?q=${encodeURIComponent(dev?.serial ?? '')}`, { token: adminToken });
+check(`Lỗi nghiêm trọng tự tạo phiếu khẩn: ${auto?.items?.[0]?.code}`, auto?.items?.some((t) => t.priority === 'URGENT'));
+await call('POST', `/admin/devices/${dev?.id}/simulate`, { token: adminToken, body: { scenario: 'normal' } });
+
+const techs = await call('GET', '/admin/technicians', { token: adminToken });
+const hung = techs?.find?.((t) => t.email === 'ktv.hung@smartcool.vn') ?? techs?.items?.find?.((t) => t.email === 'ktv.hung@smartcool.vn');
+const tk = await call('POST', '/admin/tickets', { token: cskh, expect: [201], body: { customerId: dev?.ownerId ?? dev?.owner?.id, deviceId: dev?.id, type: 'REPAIR', priority: 'HIGH', title: 'Phiếu test tự động' } });
+const asg = await call('PATCH', `/admin/tickets/${tk?.id}`, { token: cskh, body: { technicianId: hung?.id } });
+check(`Gán kỹ thuật viên → ${asg?.status}`, asg?.status === 'ASSIGNED');
+await call('PATCH', `/admin/tickets/${tk?.id}`, { token: ktv, body: { priority: 'LOW' }, expect: [403] }); // KTV không đổi ưu tiên
+const done = await call('PATCH', `/admin/tickets/${tk?.id}`, { token: ktv, body: { status: 'DONE', laborCost: 200000, partsUsed: [{ name: 'Gas R32', quantity: 1, price: 350000 }] } });
+check(`KTV hoàn thành phiếu: tổng ${done?.totalCost}`, done?.status === 'DONE' && done?.totalCost === 550000);
+const mine = await call('GET', '/admin/tickets?limit=100', { token: ktv });
+check(`KTV chỉ thấy phiếu của mình (${mine?.items?.length} phiếu)`, mine?.items?.every((t) => t.technicianId === hung?.id || t.technician?.id === hung?.id));
+await call('DELETE', `/admin/tickets/${tk?.id}`, { token: adminToken });
+await call('GET', '/admin/audit-logs?limit=5', { token: adminToken });
+await call('GET', '/admin/audit-logs', { token: kho, expect: [403] });
+await call('GET', '/me/notifications', { token: user });
+
 await call('POST', '/auth/logout', { body: { refreshToken: refreshed?.refreshToken } });
 void reg;
 console.log(`\nKết quả: ${passed} đạt, ${failed} lỗi`);

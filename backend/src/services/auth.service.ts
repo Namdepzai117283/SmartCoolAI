@@ -1,5 +1,7 @@
 
 import { z } from 'zod';
+import { randomBytes } from 'node:crypto';
+import { OAuth2Client } from 'google-auth-library';
 
 import { prisma } from '../config/database';
 
@@ -168,7 +170,7 @@ function ensureActiveUser(
 
 async function createSession(
   userId: string,
-  role: 'USER' | 'ADMIN',
+  role: import('../config/permissions').AuthRole,
   sessionInfo: SessionInfo = {}
 ) {
   const accessToken = generateAccessToken({
@@ -622,6 +624,96 @@ export async function getCurrentUser(
 // EXPORT AUTH SERVICE
 // ==========================================
 
+
+// ==========================================
+// 07. GOOGLE LOGIN
+// App/Web lấy idToken từ Google → gửi lên đây.
+// Server tự xác minh idToken với Google (chữ ký + audience = GOOGLE_CLIENT_ID),
+// rồi cấp access/refresh token JWT của SmartCool giống đăng nhập thường.
+// ==========================================
+
+const googleSchema = z.object({ idToken: z.string().min(20).max(5000) });
+
+const googleClientIds = (process.env.GOOGLE_CLIENT_ID || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter(Boolean);
+
+const googleClient = new OAuth2Client();
+
+export function getGoogleConfig() {
+  return { enabled: googleClientIds.length > 0, clientId: googleClientIds[0] ?? null };
+}
+
+export async function loginWithGoogle(
+  input: unknown,
+  sessionInfo: SessionInfo = {}
+) {
+  if (!googleClientIds.length) {
+    throw new AuthError('Server chưa cấu hình GOOGLE_CLIENT_ID.', 503);
+  }
+
+  const parsed = googleSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new AuthError('Thiếu idToken của Google.', 400);
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: parsed.data.idToken,
+      audience: googleClientIds,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw new AuthError('Token Google không hợp lệ hoặc đã hết hạn.', 401);
+  }
+
+  if (!payload?.sub || !payload.email || !payload.email_verified) {
+    throw new AuthError('Tài khoản Google chưa xác minh email.', 401);
+  }
+
+  const email = payload.email.toLowerCase();
+  const fullName = (payload.name || email.split('@')[0] || 'Người dùng Google').slice(0, 150);
+
+  // 1) Đã liên kết Google → đăng nhập
+  // 2) Email đã đăng ký bằng mật khẩu → liên kết googleId vào tài khoản đó
+  // 3) Chưa có → tạo tài khoản mới (mật khẩu ngẫu nhiên, không dùng được để đăng nhập thường)
+  let existing = await prisma.user.findUnique({ where: { googleId: payload.sub } });
+  if (!existing) existing = await prisma.user.findUnique({ where: { email } });
+
+  let userId: string;
+  if (existing) {
+    ensureActiveUser(existing.status);
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        googleId: payload.sub,
+        lastLogin: new Date(),
+        ...(payload.picture ? { profile: { upsert: { create: { fullName, avatarUrl: payload.picture }, update: { avatarUrl: payload.picture } } } } : {}),
+      },
+    });
+    userId = existing.id;
+  } else {
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: await hashPassword(randomBytes(24).toString('hex')),
+        googleId: payload.sub,
+        authProvider: 'GOOGLE',
+        lastLogin: new Date(),
+        profile: { create: { fullName, avatarUrl: payload.picture ?? null } },
+      },
+    });
+    userId = created.id;
+  }
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: publicUserSelect });
+  await prisma.auditLog.create({ data: { actorId: user.id, action: 'LOGIN_GOOGLE', entity: 'user', entityId: user.id } });
+  const tokens = await createSession(user.id, user.role, sessionInfo);
+  return { user, ...tokens, isNewUser: !existing };
+}
+
 export const authService = {
   register,
   login,
@@ -629,6 +721,8 @@ export const authService = {
   logout,
   logoutAll,
   getCurrentUser,
+  loginWithGoogle,
+  getGoogleConfig,
 };
 
 export default authService;

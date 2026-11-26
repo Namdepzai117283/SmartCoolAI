@@ -74,14 +74,22 @@ Lỗi ở bước nào thì trả mã tương ứng: 400 (dữ liệu sai), 401 
   - **Refresh token** (chuỗi ngẫu nhiên 64 byte, sống 30 ngày). DB chỉ lưu **SHA-256** của nó (bảng `refresh_tokens`).
 - **Hết 15 phút** → app gọi `POST /api/auth/refresh` → server thu hồi token cũ, cấp cặp mới (**xoay vòng**). Mỗi refresh token chỉ dùng được **một lần**: dùng lại token đã thu hồi → 401.
 - **Đăng xuất**: đánh dấu `revoked_at` cho refresh token.
-- **Phân quyền**: `requireAdmin` kiểm tra `role` – **lấy role trong DB**, không tin role trong token (đổi quyền có hiệu lực ngay).
+- **Phân quyền (RBAC)**: `requirePermission('tickets:write')` trong `auth.middleware.ts` – **lấy role trong DB**, không tin role trong token (đổi quyền có hiệu lực ngay). Bảng vai trò → quyền ở `src/config/permissions.ts`:
+  | Vai trò | Được làm |
+  |---|---|
+  | Super Admin | Tất cả |
+  | Quản lý kho/kỹ thuật | Model, mã lỗi, thiết bị, firmware/OTA, xem phiếu |
+  | CSKH | Khách hàng, tạo/điều phối phiếu, thông báo, tài liệu |
+  | Kỹ thuật viên | Chỉ thấy và cập nhật **phiếu được gán cho mình** (không đổi người nhận, mức ưu tiên) |
+  | Khách hàng | Chỉ API `/api/me/*`, bị chặn khỏi `/admin` |
+- **Đăng nhập Google** (`auth.service.ts → loginWithGoogle`): web lấy `id_token` từ Google → server dùng `google-auth-library` kiểm tra chữ ký, `aud` = `GOOGLE_CLIENT_ID`, `email_verified` → tìm/liên kết/tạo user → **trả JWT của mình** (sau đó mọi thứ giống đăng nhập thường). Không lưu mật khẩu Google, không cần Client Secret.
 - App điện thoại lưu token bằng **expo-secure-store** (Keychain/Keystore), không dùng AsyncStorage.
 
 Mở `src/middlewares/auth.middleware.ts` để chỉ từng bước kiểm tra.
 
 ## 6. Database
 
-- **14 bảng**: users, user_profiles, refresh_tokens, conversations, messages, message_attachments, brands, products, comparisons, cost_estimates, diagnoses, knowledge_articles, article_favorites, guide_progress.
+- **25 bảng** (14 bảng gốc + 11 bảng quản trị/IoT: devices, device_telemetry, device_events, error_codes, firmwares, firmware_rollouts, service_tickets, maintenance_rules, notifications, system_settings, audit_logs). 14 bảng gốc: users, user_profiles, refresh_tokens, conversations, messages, message_attachments, brands, products, comparisons, cost_estimates, diagnoses, knowledge_articles, article_favorites, guide_progress.
 - **Quan hệ chính**:
   - users 1–1 user_profiles
   - users 1–n conversations 1–n messages 1–n message_attachments
@@ -102,6 +110,19 @@ Mở `src/middlewares/auth.middleware.ts` để chỉ từng bước kiểm tra.
   `subtotal = SL × đơn giá + vật tư + Σ(vật tư chi tiết) + công × SL + phát sinh`, `dự phòng = subtotal × %`, `tổng = subtotal + dự phòng`. Tính ở server để client không gửi số sai được; có so với ngân sách (`budgetStatus`).
 - **So sánh** (`services/comparison.service.ts`): chấm điểm 6 tiêu chí (giá, điện năng, nhãn năng lượng, inverter, bảo hành, tính năng), trọng số đổi theo ưu tiên của người dùng.
 
+## 7b. Trang quản trị (`/admin`) – 6 phân hệ
+
+| Phân hệ | Làm gì | File chính |
+|---|---|---|
+| Tổng quan | KPI (online/offline/lỗi, phiếu mở, KTV rảnh), biểu đồ lỗi 14 ngày, điện năng, dịch vụ 6 tháng, cảnh báo khẩn | `dashboard.service.ts` (SQL `date_trunc` gom theo ngày/tháng) |
+| Thiết bị & danh mục | Model, bảng mã lỗi + cách sửa, thiết bị theo Serial/MAC, firmware, lịch sử; OTA đẩy theo thiết bị/khu vực/toàn bộ, đếm thành công/lỗi | `device.service.ts`, `errorCode.service.ts`, `firmware.service.ts` |
+| Người dùng & RBAC | Khách (thiết bị, bảo hành, lịch sử phiếu), KTV (khu vực, kỹ năng, sẵn sàng), đổi vai trò | `admin.service.ts`, `config/permissions.ts` |
+| Phiếu dịch vụ | Tiếp nhận → gán KTV → đang làm → xong; vật tư + công → tổng tiền; nhắc bảo trì định kỳ | `ticket.service.ts`, `maintenance.service.ts` |
+| Thông báo & CMS | Gửi thông báo theo đối tượng (tất cả/khách/nhân viên/1 người), hẹn giờ; bài viết/FAQ | `notification.service.ts`, `article.service.ts` |
+| Cấu hình & nhật ký | Ngưỡng nhiệt độ/áp suất/điện, tự tạo phiếu khi lỗi nghiêm trọng, thời hạn bảo hành; audit log mọi thao tác ghi | `setting.service.ts`, `audit.service.ts` |
+
+**IoT giả lập**: `POST /api/admin/devices/:id/simulate {scenario:'gas'}` → `device.service.ingest()` lưu số đo vào `device_telemetry`, so với ngưỡng trong `system_settings` → mã `GAS-LOW` (CRITICAL) → thiết bị chuyển ERROR, ghi `device_events`, gửi thông báo cho chủ máy, **tự tạo phiếu khẩn** `SC-YYMMDD-NNNN`. Khi có thiết bị thật (ESP32 + cảm biến) chỉ cần gọi cùng API này.
+
 ## 8. Bảo mật đã làm
 
 | Vấn đề | Cách xử lý |
@@ -114,13 +135,16 @@ Mở `src/middlewares/auth.middleware.ts` để chỉ từng bước kiểm tra.
 | Xem dữ liệu người khác | Luôn lọc theo `userId` từ token |
 | Gọi API từ web lạ | `CORS_ORIGIN` |
 | Lộ bí mật | `.env` nằm trong `.gitignore`, chỉ commit `.env.example` |
+| Nhân viên làm quá quyền | RBAC theo quyền + KTV chỉ thấy phiếu của mình |
+| Không biết ai sửa gì | Bảng `audit_logs` ghi người, hành động, đối tượng, IP, giá trị cũ→mới |
 
 ## 9. Demo trước thầy (5 phút)
 
 1. `npm run dev` → mở `http://localhost:5000/api/health` (thấy database connected).
-2. `npm run test:api` → 54 bước xanh: đăng ký, đăng nhập, sai mật khẩu 401, không token 401, user thường thêm sản phẩm 403, CRUD đủ các bảng, lỗi "chảy/cháy".
+2. `npm run test:api` → 88 bước xanh (thêm RBAC, IoT, phiếu): đăng ký, đăng nhập, sai mật khẩu 401, không token 401, user thường thêm sản phẩm 403, CRUD đủ các bảng, lỗi "chảy/cháy".
 3. `npm run db:studio` → mở bảng `cost_estimates` cho thầy thấy dữ liệu vừa lưu.
-4. (Nếu có Postman) gọi `POST /api/auth/login` → copy `accessToken` → gọi `GET /api/diagnoses`.
+4. Mở `http://localhost:5000/admin` → đăng nhập admin → Thiết bị → chọn 1 máy → **Giả lập rò gas** → quay lại Tổng quan thấy cảnh báo + phiếu khẩn tự tạo. Đăng nhập `ktv.hung@smartcool.vn` để thấy menu ít hơn.
+5. (Nếu có Postman) gọi `POST /api/auth/login` → copy `accessToken` → gọi `GET /api/diagnoses`.
 
 ## 10. Câu hỏi có thể gặp
 

@@ -8,6 +8,8 @@ import articleRoutes from './routes/article.routes';
 import diagnosisRoutes from './routes/diagnosis.routes';
 import { comparisonRoutes, estimateRoutes } from './routes/estimate.routes';
 import adminRoutes from './routes/admin.routes';
+import { meRoutes } from './routes/customer.routes';
+import path from 'node:path';
 const app = express();
 app.disable('x-powered-by');
 // CORS_ORIGIN="https://smartcoolai.vercel.app,http://localhost:5173" (bỏ trống = cho phép tất cả)
@@ -30,7 +32,11 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/diagnoses', diagnosisRoutes);
 app.use('/api/estimates', estimateRoutes);
 app.use('/api/comparisons', comparisonRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); }, adminRoutes);
+app.use('/api/me', meRoutes);
+
+// Giao diện Admin (file tĩnh): http://localhost:5000/admin
+app.use('/admin', express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use((_req, res) => { res.status(404).json({ success: false, message: 'Không tìm thấy đường dẫn API.' }); });
 const errorHandler: express.ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) { next(error); return; }

@@ -23,3 +23,5 @@ services:
         value: "30"
       - key: CORS_ORIGIN
         value: https://smartcoolai.vercel.app
+      - key: GOOGLE_CLIENT_ID
+        sync: false

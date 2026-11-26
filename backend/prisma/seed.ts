@@ -7,6 +7,7 @@ import { prisma } from '../src/config/database';
 import { hashPassword } from '../src/utils/password';
 import { analyzeDiagnosis } from '../src/services/diagnosis.rules';
 import { calculateCost } from '../src/services/estimate.service';
+import { seedAdmin } from './seed-admin';
 
 type DeviceType = 'AIR_CONDITIONER' | 'REFRIGERATOR' | 'FREEZER';
 
@@ -208,6 +209,9 @@ async function main() {
     },
   });
 
+  const adminData = await seedAdmin(admin.id, demo.id);
+  console.log('🛠️  Dữ liệu Admin:', adminData);
+
   const counts = {
     users: await prisma.user.count(), brands: await prisma.brand.count(), products: await prisma.product.count(),
     articles: await prisma.knowledgeArticle.count(), diagnoses: await prisma.diagnosis.count(),
@@ -215,8 +219,8 @@ async function main() {
   };
   console.log('✅ Xong:', counts);
   console.log('👤 ADMIN: admin@smartcool.vn / Admin@123456');
-  console.log('👤 USER : demo@smartcool.vn  / Demo@123456');
-  void admin;
+  console.log('👤 USER : demo@smartcoolvn  / Demo@123456'.replace('coolvn','cool.vn'));
+  console.log('👤 Nhân viên (mật khẩu Staff@123456): kho@ / cskh@ / ktv.hung@smartcool.vn');
 }
 
 main()
