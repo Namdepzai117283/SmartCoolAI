@@ -15,7 +15,8 @@ import {
 // TYPES
 // ==========================================
 
-export type AuthRole = 'USER' | 'ADMIN';
+import { hasPermission, isRole, type AuthRole, type Permission } from '../config/permissions';
+export type { AuthRole };
 
 export interface AuthenticatedUser {
   userId: string;
@@ -170,10 +171,7 @@ export async function requireAuth(
 
     // Kiểm tra quyền người dùng.
 
-    if (
-      user.role !== 'USER' &&
-      user.role !== 'ADMIN'
-    ) {
+    if (!isRole(user.role)) {
       sendAuthError(
         res,
         403,
@@ -265,6 +263,31 @@ export function requireRole(
 }
 
 // ==========================================
+// 02b. REQUIRE PERMISSION (RBAC)
+// Ví dụ: router.post('/', requireAuth, requirePermission('tickets:write'), ...)
+// ==========================================
+
+export function requirePermission(...permissions: Permission[]) {
+  return (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    if (!req.user) {
+      sendAuthError(res, 401, 'Bạn chưa đăng nhập.');
+      return;
+    }
+
+    if (!permissions.some((p) => hasPermission(req.user!.role, p))) {
+      sendAuthError(res, 403, 'Vai trò của bạn không có quyền thực hiện thao tác này.');
+      return;
+    }
+
+    next();
+  };
+}
+
+// ==========================================
 // 03. REQUIRE ADMIN
 // Chỉ cho phép quản trị viên
 // ==========================================
@@ -288,6 +311,7 @@ export const authMiddleware = {
   requireAuth,
   optionalAuth,
   requireRole,
+  requirePermission,
   requireAdmin,
   requireUser,
 };

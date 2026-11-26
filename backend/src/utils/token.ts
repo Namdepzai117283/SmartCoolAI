@@ -8,7 +8,8 @@ import {
 
 import { authConfig } from '../config/auth';
 
-export type AuthRole = 'USER' | 'ADMIN';
+import { isRole, type AuthRole } from '../config/permissions';
+export type { AuthRole };
 
 export interface AccessTokenPayload {
   userId: string;
@@ -66,10 +67,7 @@ export function verifyAccessToken(
     );
   }
 
-  if (
-    decoded.role !== 'USER' &&
-    decoded.role !== 'ADMIN'
-  ) {
+  if (!isRole(decoded.role)) {
     throw new Error(
       'Quyền người dùng không hợp lệ.'
     );

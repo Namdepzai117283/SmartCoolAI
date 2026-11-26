@@ -36,6 +36,12 @@ router.post(
   authController.login
 );
 
+// 02b. Đăng nhập bằng Google
+// POST /api/auth/google { idToken }
+
+router.get('/google/config', authController.googleConfig);
+router.post('/google', authController.google);
+
 // 03. Làm mới phiên đăng nhập
 // POST /api/auth/refresh
 

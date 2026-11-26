@@ -21,7 +21,7 @@ import type {
 interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
-    role: 'USER' | 'ADMIN';
+    role: import('../config/permissions').AuthRole;
   };
 }
 
@@ -291,7 +291,28 @@ export async function getCurrentUser(
 // EXPORT CONTROLLER
 // ==========================================
 
+// POST /api/auth/google  { idToken }
+export async function google(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const result = await authService.loginWithGoogle(req.body, getSessionInfo(req));
+    sendSuccess(res, 200, 'Đăng nhập Google thành công.', result);
+  } catch (error) {
+    handleError(error, res, next);
+  }
+}
+
+// GET /api/auth/google/config → client biết Client ID để hiện nút Google
+export function googleConfig(_req: Request, res: Response): void {
+  sendSuccess(res, 200, 'OK', authService.getGoogleConfig());
+}
+
 export const authController = {
+  google,
+  googleConfig,
   register,
   login,
   refresh,

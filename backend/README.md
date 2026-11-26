@@ -17,7 +17,7 @@ npm install                 # tự chạy prisma generate
 npm run db:deploy           # tạo bảng (prisma migrate deploy)
 npm run db:seed             # dữ liệu mẫu
 npm run dev                 # http://localhost:5000
-npm run test:api            # (cửa sổ khác) kiểm tra 54 bước API
+npm run test:api            # (cửa sổ khác) kiểm tra 88 bước API
 ```
 
 Tài khoản mẫu: **admin@smartcool.vn / Admin@123456** (ADMIN) · **demo@smartcool.vn / Demo@123456** (USER)
@@ -75,7 +75,22 @@ API cần đăng nhập gửi header `Authorization: Bearer <accessToken>`.
 | Dự toán | `GET` / `POST /api/estimates`, `GET` / `PATCH` / `DELETE /api/estimates/:id` | Đăng nhập (chỉ của mình) | CRUD, server tự tính tổng |
 | So sánh | `GET` / `POST /api/comparisons`, `GET` / `DELETE /api/comparisons/:id` | Đăng nhập (chỉ của mình) | So sánh 2 sản phẩm, chấm điểm |
 | Hội thoại | `GET` / `POST /api/conversations`, `GET` / `PATCH` / `DELETE /:id`, `POST /:id/messages` | Đăng nhập | Lịch sử chat AI |
-| Quản trị | `GET /api/admin/stats`, `GET /api/admin/users`, `PATCH /api/admin/users/:id/status` | ADMIN | Thống kê, khóa/mở tài khoản |
+| Google | `GET /api/auth/google/config` | Công khai | Server đã bật Google chưa, Client ID |
+| | `POST /api/auth/google` `{ idToken }` | Công khai | Đăng nhập bằng Google → trả JWT như login thường |
+| Khách hàng | `GET /api/me/devices`, `GET`/`POST /api/me/tickets`, `GET /api/me/notifications`, `PATCH /api/me/notifications/:id/read` | Đăng nhập | Thiết bị, yêu cầu sửa chữa, hộp thư của tôi |
+| Quản trị | `GET /api/admin/me` | Nhân viên | Vai trò + danh sách quyền (để vẽ menu) |
+| | `GET /api/admin/dashboard`, `/stats` | dashboard:read | KPI, biểu đồ, cảnh báo khẩn |
+| | `GET`/`POST /api/admin/devices`, `GET`/`PATCH`/`DELETE /:id`, `POST /:id/simulate` | devices:read / write | Thiết bị IoT (Serial/MAC), giả lập lỗi |
+| | `GET`/`POST /api/admin/error-codes`, `PATCH`/`DELETE /:id` | catalog:write | Bảng mã lỗi + cách khắc phục |
+| | `GET`/`POST /api/admin/firmware`, `DELETE /:id`, `GET /:id/rollouts`, `POST /:id/rollout` | firmware:write | Phát hành firmware, đẩy OTA, theo dõi thành công/lỗi |
+| | `GET`/`POST /api/admin/tickets`, `GET`/`PATCH`/`DELETE /:id` | tickets:read / write / work | Phiếu dịch vụ: tiếp nhận, gán KTV, tiến độ, vật tư |
+| | `GET`/`PUT /api/admin/maintenance/rules`, `GET /maintenance/due`, `POST /maintenance/run` | tickets / settings | Bảo trì định kỳ, gửi nhắc |
+| | `GET /api/admin/users`, `GET /:id`, `PATCH /:id/status`, `/:id/role`, `/:id/staff-profile`, `GET /technicians` | users:read / write | Khách hàng, nhân viên, phân quyền |
+| | `GET`/`POST /api/admin/notifications`, `DELETE /:id` | notifications:write | Thông báo đẩy theo đối tượng, hẹn giờ |
+| | `GET`/`PUT /api/admin/settings` | settings:write | Ngưỡng cảnh báo, quy tắc tự động, bảo hành |
+| | `GET /api/admin/audit-logs` | audit:read | Nhật ký ai làm gì, lúc nào |
+
+Giao diện quản trị: mở `http://localhost:5000/admin` (file tĩnh trong `public/admin/`).
 
 ### Ví dụ
 

@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { optionalAuth, requireAdmin, requireAuth } from '../middlewares/auth.middleware';
+import { optionalAuth, requireAuth, requirePermission } from '../middlewares/auth.middleware';
+
+const requireContent = requirePermission('content:write');
 import { articleController } from '../controllers/article.controller';
 
 // ==========================================
@@ -21,9 +23,9 @@ router.post('/:id/favorite', requireAuth, articleController.addFavorite);
 router.delete('/:id/favorite', requireAuth, articleController.removeFavorite);
 router.put('/:id/progress', requireAuth, articleController.saveProgress);
 
-// ADMIN
-router.post('/', requireAuth, requireAdmin, articleController.create);
-router.patch('/:id', requireAuth, requireAdmin, articleController.update);
-router.delete('/:id', requireAuth, requireAdmin, articleController.remove);
+// Quản lý nội dung (CMS): Super Admin, Chăm sóc khách hàng
+router.post('/', requireAuth, requireContent, articleController.create);
+router.patch('/:id', requireAuth, requireContent, articleController.update);
+router.delete('/:id', requireAuth, requireContent, articleController.remove);
 
 export default router;

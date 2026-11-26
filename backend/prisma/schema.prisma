@@ -14,6 +14,68 @@ datasource db {
 enum UserRole {
   USER
   ADMIN
+  WAREHOUSE
+  SUPPORT
+  TECHNICIAN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  ERROR
+}
+
+enum ErrorSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum RolloutStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum TicketType {
+  REPAIR
+  MAINTENANCE
+  WARRANTY
+  INSTALLATION
+}
+
+enum TicketStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  SYSTEM
+  PROMOTION
+  WEATHER
+  DEVICE_ALERT
+  MAINTENANCE
+}
+
+enum NotificationTarget {
+  ALL
+  ROLE
+  USER
 }
 
 enum UserStatus {
@@ -71,6 +133,8 @@ model User {
   email        String     @unique @db.VarChar(255)
   passwordHash String     @map("password_hash")
   role         UserRole   @default(USER)
+  googleId     String?      @unique @map("google_id")
+  authProvider AuthProvider @default(LOCAL) @map("auth_provider")
   status       UserStatus @default(ACTIVE)
 
   createdAt DateTime  @default(now()) @map("created_at")
@@ -86,7 +150,15 @@ model User {
   favorites     ArticleFavorite[]
   guideProgress GuideProgress[]
 
+  devices         Device[]
+  customerTickets ServiceTicket[]  @relation("TicketCustomer")
+  assignedTickets ServiceTicket[]  @relation("TicketTechnician")
+  notifications   Notification[]   @relation("NotificationRecipient")
+  sentNotices     Notification[]   @relation("NotificationSender")
+  auditLogs       AuditLog[]
+
   @@index([status])
+  @@index([role])
   @@map("users")
 }
 
@@ -101,6 +173,11 @@ model UserProfile {
   phone     String? @db.VarChar(20)
   address   String?
   avatarUrl String? @map("avatar_url")
+
+  // Dành cho kỹ thuật viên / nhân viên
+  region      String?  @db.VarChar(100)
+  skills      String[] @default([])
+  isAvailable Boolean  @default(true) @map("is_available")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -262,6 +339,7 @@ model Product {
 
   brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
 
+  devices           Device[]
   firstComparisons  Comparison[]   @relation("FirstProduct")
   secondComparisons Comparison[]   @relation("SecondProduct")
   costEstimates     CostEstimate[]
@@ -466,4 +544,251 @@ model GuideProgress {
   @@unique([userId, articleId])
   @@index([articleId])
   @@map("guide_progress")
+}
+
+// ==========================================
+// 15. BẢNG MÃ LỖI CHUẨN
+// ==========================================
+
+model ErrorCode {
+  id         String        @id @default(uuid()) @db.Uuid
+  code       String        @db.VarChar(20)
+  deviceType DeviceType    @map("device_type")
+  brand      String        @default("") @db.VarChar(100) // "" = áp dụng mọi hãng
+  title      String        @db.VarChar(255)
+  severity   ErrorSeverity @default(WARNING)
+  causes     String[]      @default([])
+  solution   String        @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([code, deviceType, brand])
+  @@index([severity])
+  @@map("error_codes")
+}
+
+// ==========================================
+// 16. THIẾT BỊ THỰC TẾ (IoT, dữ liệu mô phỏng)
+// ==========================================
+
+model Device {
+  id              String       @id @default(uuid()) @db.Uuid
+  serial          String       @unique @db.VarChar(50)
+  macAddress      String?      @unique @map("mac_address") @db.VarChar(20)
+  productId       String       @map("product_id") @db.Uuid
+  ownerId         String?      @map("owner_id") @db.Uuid
+  name            String?      @db.VarChar(150)
+  region          String       @default("TP. Hồ Chí Minh") @db.VarChar(100)
+  address         String?
+  status          DeviceStatus @default(OFFLINE)
+  firmwareVersion String       @default("1.0.0") @map("firmware_version") @db.VarChar(20)
+  lastSeenAt      DateTime?    @map("last_seen_at")
+
+  powerOn       Boolean @default(false) @map("power_on")
+  mode          String? @db.VarChar(30)  // COOL, DRY, FAN, AUTO, ECO...
+  targetTemp    Float?  @map("target_temp")
+  currentTemp   Float?  @map("current_temp")
+  lastErrorCode String? @map("last_error_code") @db.VarChar(20)
+
+  installedAt   DateTime? @map("installed_at")
+  warrantyUntil DateTime? @map("warranty_until")
+  lastServiceAt DateTime? @map("last_service_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  owner     User?             @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  telemetry DeviceTelemetry[]
+  events    DeviceEvent[]
+  rollouts  FirmwareRollout[]
+  tickets   ServiceTicket[]
+
+  @@index([status])
+  @@index([region])
+  @@index([ownerId])
+  @@map("devices")
+}
+
+// Thông số vận hành theo thời gian
+model DeviceTelemetry {
+  id          String   @id @default(uuid()) @db.Uuid
+  deviceId    String   @map("device_id") @db.Uuid
+  temperature Float?
+  humidity    Float?
+  powerKw     Float?   @map("power_kw")
+  pressure    Float?   // áp suất gas (psi)
+  errorCode   String?  @map("error_code") @db.VarChar(20)
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, recordedAt])
+  @@index([recordedAt])
+  @@map("device_telemetry")
+}
+
+// Lịch sử bật/tắt, đổi chế độ, báo lỗi
+model DeviceEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  deviceId  String   @map("device_id") @db.Uuid
+  type      String   @db.VarChar(30) // POWER_ON, POWER_OFF, MODE, ERROR, FIRMWARE
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, createdAt])
+  @@map("device_events")
+}
+
+// ==========================================
+// 17. FIRMWARE & CẬP NHẬT OTA
+// ==========================================
+
+model Firmware {
+  id         String     @id @default(uuid()) @db.Uuid
+  version    String     @db.VarChar(20)
+  deviceType DeviceType @map("device_type")
+  notes      String?    @db.Text
+  fileUrl    String?    @map("file_url")
+  isStable   Boolean    @default(true) @map("is_stable")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  rollouts FirmwareRollout[]
+
+  @@unique([version, deviceType])
+  @@map("firmwares")
+}
+
+model FirmwareRollout {
+  id         String        @id @default(uuid()) @db.Uuid
+  firmwareId String        @map("firmware_id") @db.Uuid
+  deviceId   String        @map("device_id") @db.Uuid
+  status     RolloutStatus @default(PENDING)
+  message    String?
+  startedAt  DateTime      @default(now()) @map("started_at")
+  finishedAt DateTime?     @map("finished_at")
+
+  firmware Firmware @relation(fields: [firmwareId], references: [id], onDelete: Cascade)
+  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([firmwareId, status])
+  @@index([deviceId])
+  @@map("firmware_rollouts")
+}
+
+// ==========================================
+// 18. PHIẾU DỊCH VỤ (sửa chữa / bảo trì / bảo hành)
+// ==========================================
+
+model ServiceTicket {
+  id           String         @id @default(uuid()) @db.Uuid
+  code         String         @unique @db.VarChar(20) // VD: SC-000123
+  customerId   String         @map("customer_id") @db.Uuid
+  deviceId     String?        @map("device_id") @db.Uuid
+  technicianId String?        @map("technician_id") @db.Uuid
+  type         TicketType
+  status       TicketStatus   @default(NEW)
+  priority     TicketPriority @default(NORMAL)
+  title        String         @db.VarChar(255)
+  description  String?        @db.Text
+  errorCode    String?        @map("error_code") @db.VarChar(20)
+  address      String?
+  region       String?        @db.VarChar(100)
+
+  scheduledAt DateTime? @map("scheduled_at")
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  partsUsed  Json?    @map("parts_used") // [{ name, quantity, price }]
+  laborCost  Decimal  @default(0) @map("labor_cost") @db.Decimal(15, 0)
+  partsCost  Decimal  @default(0) @map("parts_cost") @db.Decimal(15, 0)
+  totalCost  Decimal  @default(0) @map("total_cost") @db.Decimal(15, 0)
+  resolution String?  @db.Text
+  rating     Int?     // 1-5 khách đánh giá
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  customer   User    @relation("TicketCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  technician User?   @relation("TicketTechnician", fields: [technicianId], references: [id], onDelete: SetNull)
+  device     Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([technicianId, status])
+  @@index([customerId, createdAt])
+  @@map("service_tickets")
+}
+
+// Chu kỳ bảo trì định kỳ theo loại máy
+model MaintenanceRule {
+  id             String     @id @default(uuid()) @db.Uuid
+  deviceType     DeviceType @unique @map("device_type")
+  intervalMonths Int        @map("interval_months")
+  message        String     @db.Text
+  isActive       Boolean    @default(true) @map("is_active")
+  lastRunAt      DateTime?  @map("last_run_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@map("maintenance_rules")
+}
+
+// ==========================================
+// 19. THÔNG BÁO
+// target = ALL (mọi người), ROLE (targetValue = vai trò), USER (recipientId)
+// ==========================================
+
+model Notification {
+  id          String             @id @default(uuid()) @db.Uuid
+  title       String             @db.VarChar(255)
+  body        String             @db.Text
+  type        NotificationType   @default(SYSTEM)
+  target      NotificationTarget @default(ALL)
+  targetValue String?            @map("target_value") @db.VarChar(50)
+  recipientId String?            @map("recipient_id") @db.Uuid
+  senderId    String?            @map("sender_id") @db.Uuid
+  scheduledAt DateTime?          @map("scheduled_at")
+  sentAt      DateTime?          @map("sent_at")
+  readAt      DateTime?          @map("read_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  recipient User? @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([target, sentAt])
+  @@index([recipientId])
+  @@map("notifications")
+}
+
+// ==========================================
+// 20. CẤU HÌNH HỆ THỐNG & NHẬT KÝ
+// ==========================================
+
+model SystemSetting {
+  key         String   @id @db.VarChar(100)
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String   @db.VarChar(50)  // CREATE, UPDATE, DELETE, OTA_PUSH, ASSIGN, LOGIN_GOOGLE...
+  entity    String   @db.VarChar(50)  // device, ticket, setting...
+  entityId  String?  @map("entity_id") @db.VarChar(100)
+  detail    Json?
+  ip        String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, createdAt])
+  @@index([actorId])
+  @@map("audit_logs")
 }
