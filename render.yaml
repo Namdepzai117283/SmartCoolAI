@@ -1,0 +1,25 @@
+# Render Blueprint – deploy backend lên https://render.com (gói Free)
+# Render > New > Blueprint > chọn repo này. Sau đó điền DATABASE_URL (Neon) trong tab Environment.
+services:
+  - type: web
+    name: smartcool-ai-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    # Gói Free không có pre-deploy nên chạy migrate ngay trong bước build
+    buildCommand: npm ci --include=dev && npm run build && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN_DAYS
+        value: "30"
+      - key: CORS_ORIGIN
+        value: https://smartcoolai.vercel.app
