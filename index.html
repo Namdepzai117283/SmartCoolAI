@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>SmartCool AI 2026</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: fixed glass sidebar + topbar, views swap in the main pane; aurora sky behind everything. Single dark look by design. */
+:root{
+  color-scheme:dark;
+  --night:#040816; --deep:#0A1430; --ink:#E6F0FF; --muted:#8DA2C4; --dim:#5E7499;
+  --ice:#22D3EE; --ice2:#67E8F9; --blue:#3B82F6; --violet:#8B5CF6; --violet2:#A78BFA;
+  --ok:#34D399; --warn:#FBBF24; --bad:#F87171;
+  --glass:rgba(255,255,255,.055); --glass2:rgba(255,255,255,.09); --line:rgba(255,255,255,.1); --line2:rgba(255,255,255,.18);
+  --grad:linear-gradient(120deg,var(--ice),var(--blue) 55%,var(--violet));
+  --font:"Be Vietnam Pro",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:22px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--night);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--ice2);outline-offset:2px;border-radius:10px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.025em}
+p{margin:0}
+
+/* ---------- sky ---------- */
+.sky{position:fixed;inset:0;z-index:0;overflow:hidden;background:
+  radial-gradient(1200px 700px at 0% 0%,rgba(37,99,235,.35),transparent 60%),
+  radial-gradient(900px 700px at 100% 0%,rgba(124,58,237,.3),transparent 60%),
+  radial-gradient(1000px 600px at 60% 110%,rgba(6,182,212,.22),transparent 60%),var(--night)}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.b1{width:520px;height:520px;left:-120px;top:-140px;background:#2563EB}
+.b2{width:560px;height:460px;right:-160px;top:-120px;background:#7C3AED;animation-duration:26s}
+.b3{width:640px;height:420px;left:35%;bottom:-220px;background:#0891B2;animation-duration:30s}
+@keyframes drift{to{transform:translate(80px,60px) scale(1.15)}}
+#flakes{position:absolute;inset:0;width:100%;height:100%}
+
+/* ---------- shell ---------- */
+.app{position:relative;z-index:1;min-height:100%}
+.shell{display:grid;grid-template-columns:272px 1fr;min-height:100vh}
+.sb{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;padding:26px 18px 20px;
+  background:linear-gradient(180deg,rgba(11,21,48,.72),rgba(7,13,31,.55));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-right:1px solid rgba(125,211,252,.14);overflow-y:auto;z-index:20}
+.brand{display:flex;align-items:center;gap:12px;padding:0 4px 20px}
+.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--grad);
+  box-shadow:0 8px 24px rgba(34,211,238,.45),inset 0 1px 1px rgba(255,255,255,.5);color:#fff}
+.logo svg{width:24px;height:24px;stroke-width:2;animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brand b{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.brand b span,.gt{background:linear-gradient(90deg,var(--ice2),#60A5FA,#C4B5FD);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{display:block;color:var(--muted);font-size:12px}
+.cap{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--dim);padding:4px 12px 8px}
+.nav{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:12px;color:#A9BCDA;font-weight:500;font-size:14px;
+  text-decoration:none;border:1px solid transparent;transition:background .25s,color .25s,border-color .25s,transform .25s}
+.nav:hover{background:rgba(255,255,255,.05);color:#fff;transform:translateX(2px)}
+.nav.on{color:#fff;font-weight:600;background:linear-gradient(90deg,rgba(34,211,238,.2),rgba(59,130,246,.03));border-color:rgba(103,232,249,.35);box-shadow:0 0 20px rgba(34,211,238,.18)}
+.nav.on svg{color:var(--ice2)}
+.nav.on::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:3px;background:linear-gradient(var(--ice2),#818CF8);box-shadow:0 0 10px var(--ice)}
+.badge{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--grad);color:#fff;box-shadow:0 0 12px rgba(139,92,246,.6)}
+.promo{margin-top:auto;padding:18px;border-radius:18px;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.14));border:1px solid rgba(103,232,249,.35);box-shadow:0 10px 30px rgba(34,211,238,.15)}
+.promo svg{color:var(--ice2);width:24px;height:24px}
+.promo b{display:block;margin:6px 0 4px}
+.promo p{font-size:12px;color:#B8C8E4}
+.me{display:flex;align-items:center;gap:12px;padding:16px 6px 0}
+.av{width:38px;height:38px;border-radius:50%;background:conic-gradient(from 200deg,#F472B6,#8B5CF6,#22D3EE,#F472B6);border:2px solid rgba(255,255,255,.55);flex:none}
+.me b{font-size:13px;display:block}.me small{font-size:11px;color:var(--muted)}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.tb{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:76px;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px),40px);padding-right:max(16px,env(safe-area-inset-right,0px),40px);
+  background:rgba(7,13,31,.45);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.07)}
+.crumb{display:flex;gap:10px;font-size:14px;color:#7086AB;align-items:center;min-width:0}
+.crumb b{color:#fff;font-weight:600;white-space:nowrap}
+.tb-r{display:flex;align-items:center;gap:12px}
+.qs{display:flex;align-items:center;gap:10px;padding:9px 8px 9px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--line);color:#7C93B8;font-size:13px;min-width:220px}
+.qs kbd{margin-left:auto;font:500 11px var(--font);padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.08);color:#9FB3D1}
+.live{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:40px;background:rgba(16,185,129,.12);border:1px solid rgba(52,211,153,.35);color:#6EE7B7;font-size:13px;font-weight:500;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px 1px var(--ok);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 16px 4px var(--ok);opacity:.7}}
+.ibtn{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--glass);border:1px solid var(--line);color:#C7D6EE;transition:.2s}
+.ibtn:hover{background:var(--glass2);border-color:var(--line2)}
+.menu{display:none}
+.tb .av{width:42px;height:42px;box-shadow:0 0 16px rgba(139,92,246,.5)}
+
+.content{padding-block:32px 48px;padding-left:max(16px,env(safe-area-inset-left,0px),40px);padding-right:max(16px,env(safe-area-inset-right,0px),40px);max-width:1180px;width:100%}
+.view{display:none;flex-direction:column;gap:24px}
+.view.show{display:flex;animation:enter .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes enter{from{opacity:.001;transform:translateY(14px) scale(.99);filter:blur(6px)}}
+
+/* ---------- primitives ---------- */
+.glass{background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);border-radius:var(--r);
+  backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);box-shadow:0 24px 60px -12px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
+.card{padding:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:13px 22px;border-radius:14px;font-weight:600;color:#fff;background:var(--grad);background-size:160% 100%;
+  box-shadow:0 8px 24px rgba(59,130,246,.5),0 0 12px rgba(34,211,238,.25),inset 0 1px 1px rgba(255,255,255,.45);transition:transform .2s,box-shadow .25s,background-position .4s;white-space:nowrap}
+.btn:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 14px 36px rgba(59,130,246,.75),0 0 22px rgba(34,211,238,.45),inset 0 1px 1px rgba(255,255,255,.5)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.ghost{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 20px;border-radius:14px;font-weight:600;background:var(--glass);border:1px solid var(--line2);transition:.2s;white-space:nowrap}
+.ghost:hover{background:var(--glass2);border-color:rgba(103,232,249,.45)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:var(--glass);border:1px solid rgba(255,255,255,.12);color:#B8C8E4;font-weight:500;font-size:14px;transition:.22s}
+.chip:hover{border-color:rgba(103,232,249,.4);color:#fff}
+.chip[aria-pressed="true"]{color:#fff;font-weight:600;background:linear-gradient(90deg,rgba(34,211,238,.26),rgba(139,92,246,.2));border-color:rgba(103,232,249,.85);box-shadow:0 0 18px rgba(34,211,238,.35)}
+.orb{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 8px 22px var(--c1,rgba(34,211,238,.45)),inset 0 1px 2px rgba(255,255,255,.45);background:linear-gradient(135deg,var(--a,#22D3EE),var(--b,#3B82F6))}
+.orb svg{width:50%;height:50%;stroke-width:2}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:13px;font-weight:600;color:#C7D6EE}
+.inp{display:flex;align-items:center;gap:12px;padding:0 16px;border-radius:14px;background:rgba(10,20,48,.6);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 2px 6px rgba(0,0,0,.3);transition:.2s;color:#6F86AC}
+.inp:focus-within{border-color:var(--ice2);box-shadow:0 0 0 4px rgba(34,211,238,.12),inset 0 2px 6px rgba(0,0,0,.3)}
+.inp input,.inp select,.inp textarea{flex:1;min-width:0;border:0;background:none;outline:none;padding:14px 0;color:var(--ink)}
+.inp select{appearance:none;cursor:pointer}
+.inp select option{background:#0B1530}
+::placeholder{color:#6F86AC}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 12px;border-radius:40px;background:rgba(34,211,238,.1);border:1px solid rgba(103,232,249,.35);color:#A5F3FC;font-size:12px;font-weight:600;letter-spacing:.08em}
+.muted{color:var(--muted)}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.ph h1{font-size:clamp(30px,4vw,42px);font-weight:800}
+.ph p{color:#93A8CB;margin-top:6px}
+.back{display:inline-flex;align-items:center;gap:8px;color:#9FD8F0;font-weight:500;text-decoration:none;font-size:14px;margin-bottom:10px}
+.back:hover{color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.sec-t{font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.num{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:13px;font-weight:800;background:linear-gradient(135deg,rgba(34,211,238,.25),rgba(139,92,246,.25));border:1px solid rgba(103,232,249,.5);color:#fff}
+.note{font-size:12px;color:var(--dim)}
+.tilt{transition:transform .25s ease,box-shadow .25s,border-color .25s;transform-style:preserve-3d}
+
+/* ---------- orbit (sphere) ---------- */
+.orbit{position:relative;display:grid;place-items:center}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(165,243,252,.22)}
+.ring.r1{width:100%;height:100%;animation:spin 40s linear infinite}
+.ring.r2{width:76%;height:76%;border-color:rgba(167,139,250,.3);animation:spin 28s linear infinite reverse}
+.ring.r3{width:52%;height:52%;border-color:rgba(103,232,249,.45);animation:spin 18s linear infinite}
+.ring i{position:absolute;top:50%;left:-5px;width:10px;height:10px;border-radius:50%;background:var(--ice2);box-shadow:0 0 14px 3px var(--ice)}
+.ring.r2 i{left:auto;right:-5px;top:20%;background:var(--violet2);box-shadow:0 0 14px 3px var(--violet)}
+.sphere{position:relative;width:38%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;color:#fff;
+  background:radial-gradient(circle at 32% 28%,#E0F7FF 0,#67E8F9 18%,#3B82F6 52%,#312E81 100%);
+  box-shadow:0 0 60px 8px rgba(34,211,238,.55),0 0 140px 20px rgba(59,130,246,.35),inset -10px -16px 30px rgba(30,27,75,.6),inset 6px 8px 16px rgba(255,255,255,.5);animation:float 6s ease-in-out infinite}
+.sphere svg{width:48%;height:48%;stroke-width:1.5;filter:drop-shadow(0 0 10px #fff);animation:spin 24s linear infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.float{position:absolute;display:flex;align-items:center;gap:10px;padding:10px 16px 10px 10px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.24);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 30px rgba(10,10,40,.4);animation:float 7s ease-in-out infinite}
+.float .orb{width:34px;height:34px;border-radius:10px}
+.float small{display:block;font-size:11px;color:#DCE6FF}
+.float b{font-size:13px}
+
+/* ---------- login ---------- */
+.login{display:none;min-height:100vh;grid-template-columns:1.1fr .9fr;align-items:center;gap:40px;padding-block:40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px),72px);padding-right:max(16px,env(safe-area-inset-right,0px),72px)}
+.login.show{display:grid;animation:enter .6s}
+.login .orbit{width:min(460px,80vw);aspect-ratio:1;margin:10px auto 20px}
+.lg-copy h1{font-size:clamp(34px,4.6vw,54px);font-weight:800;line-height:1.12;margin:16px 0 14px}
+.lg-copy p{color:#A9BCDA;font-size:17px;max-width:520px}
+.lcard{max-width:480px;width:100%;justify-self:center;padding:40px;display:flex;flex-direction:column;gap:20px;border-radius:30px;box-shadow:0 40px 80px -10px rgba(0,0,0,.5),0 0 80px rgba(59,130,246,.22),inset 0 1px 0 rgba(255,255,255,.1)}
+.lcard h2{font-size:38px;font-weight:800}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.link{color:var(--ice2);font-weight:600;font-size:14px;text-decoration:none}
+.or{display:flex;align-items:center;gap:12px;color:#6F86AC;font-size:12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:#B8C8E4;cursor:pointer}
+.chk input{appearance:none;width:18px;height:18px;border-radius:5px;border:1px solid var(--line2);background:var(--glass);display:grid;place-items:center;margin:0}
+.chk input:checked{background:var(--grad);border-color:transparent;box-shadow:0 0 8px rgba(34,211,238,.6)}
+.chk input:checked::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+
+/* ---------- home ---------- */
+.greet h1{font-size:clamp(30px,4.2vw,46px);font-weight:800;margin:8px 0 6px}
+.temp{display:flex;align-items:center;gap:16px;padding:16px 22px 16px 16px;border-radius:20px}
+.temp b{font-size:30px;font-weight:800;letter-spacing:-.04em}
+.search{display:flex;align-items:center;gap:14px;padding:9px 9px 9px 22px;border-radius:20px;border-color:rgba(103,232,249,.4);box-shadow:0 0 40px rgba(34,211,238,.12)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:none;font-size:16px;padding:10px 0}
+.hero{position:relative;overflow:hidden;border-radius:28px;min-height:300px;padding:40px 44px;display:flex;align-items:center;
+  background:linear-gradient(120deg,#1D4ED8,#4338CA 55%,#7C3AED);border:1px solid rgba(255,255,255,.28);box-shadow:0 24px 70px -10px rgba(59,130,246,.5),inset 0 1px 1px rgba(255,255,255,.25)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(400px 300px at 75% 20%,rgba(34,211,238,.6),transparent 70%),radial-gradient(360px 260px at 10% 110%,rgba(168,85,247,.5),transparent 70%);animation:drift 14s ease-in-out infinite alternate}
+.hero::after{content:"";position:absolute;inset:0 0 0 55%;background:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 40px);mask:linear-gradient(90deg,transparent,#000 30%)}
+.hero-copy{position:relative;z-index:2;max-width:540px;display:flex;flex-direction:column;gap:16px}
+.hero h2{font-size:clamp(26px,3vw,36px);font-weight:800;line-height:1.18}
+.hero p{color:#DCE6FF}
+.hero .orbit{position:absolute;z-index:1;right:4%;top:50%;width:360px;aspect-ratio:1;transform:translateY(-50%)}
+.hero .ring{border-color:rgba(255,255,255,.25)}
+.white{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:14px;background:#fff;color:#3730A3;font-weight:700;box-shadow:0 0 24px rgba(255,255,255,.35),0 10px 20px rgba(30,27,75,.35);transition:.2s;text-decoration:none}
+.white:hover{transform:translateY(-2px);box-shadow:0 0 36px rgba(255,255,255,.55),0 14px 26px rgba(30,27,75,.45)}
+.hero .ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);text-decoration:none}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tool{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:22px;text-decoration:none;color:inherit;position:relative;overflow:hidden}
+.tool::after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),rgba(103,232,249,.18),transparent 45%);opacity:0;transition:opacity .3s;pointer-events:none}
+.tool:hover::after{opacity:1}
+.tool:hover{border-color:rgba(103,232,249,.4);box-shadow:0 24px 50px -14px var(--c1,rgba(34,211,238,.5))}
+.tool .top{display:flex;justify-content:space-between;align-items:flex-start}
+.go{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line);transition:.25s}
+.go svg{width:16px;height:16px}
+.tool:hover .go{background:var(--grad);border-color:transparent;transform:rotate(45deg)}
+.tool b{font-size:16px}.tool small{color:var(--muted);font-size:13px}
+
+/* ---------- chat ---------- */
+.chat{display:flex;flex-direction:column;height:calc(100vh - 76px - 64px);min-height:560px;overflow:hidden;border-radius:28px}
+.chat-h{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.chat-h .orb{width:48px;height:48px;border-radius:16px}
+.chat-h b{font-size:18px;display:block}
+.chat-h small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth}
+.m-u{align-self:flex-end;max-width:min(480px,85%);padding:13px 18px 10px;border-radius:20px 20px 6px 20px;background:linear-gradient(120deg,#0EA5E9,#3B82F6 50%,#7C3AED);box-shadow:0 10px 30px rgba(59,130,246,.45);animation:pop .4s cubic-bezier(.2,.9,.3,1.3)}
+.m-u small{display:block;text-align:right;font-size:11px;color:#E0E7FF;opacity:.8}
+.m-a{display:flex;gap:12px;align-items:flex-start;animation:pop .45s cubic-bezier(.2,.9,.3,1.2)}
+.m-a .orb{width:38px;height:38px;border-radius:12px}
+.m-a .col{display:flex;flex-direction:column;gap:8px;max-width:min(660px,100%);min-width:0}
+.meta{display:flex;align-items:center;gap:10px;font-size:12px;color:#6F86AC;flex-wrap:wrap}
+.meta b{color:#fff;font-size:14px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;background:rgba(52,211,153,.12);color:#6EE7B7;font-weight:600;font-size:11px}
+.bub{padding:18px 20px;border-radius:6px 20px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.warn{display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(245,158,11,.18),rgba(239,68,68,.14));border:1px solid rgba(251,191,36,.5);box-shadow:0 0 24px rgba(245,158,11,.18)}
+.warn .orb{--a:#FBBF24;--b:#EF4444;--c1:rgba(251,191,36,.5);width:38px;height:38px;border-radius:12px}
+.warn b{color:#FCD34D;letter-spacing:.08em;font-size:13px}
+.warn p{color:#FDE6C8;font-size:14px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;counter-reset:s}
+.steps li{display:flex;gap:12px;align-items:center;color:#DCE6FF;counter-increment:s}
+.steps li::before{content:counter(s);width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:12px;font-weight:700;background:linear-gradient(135deg,rgba(34,211,238,.25),rgba(139,92,246,.25));border:1px solid rgba(103,232,249,.5)}
+.steps li.hot{color:#FECACA;font-weight:600}.steps li.hot::before{background:linear-gradient(135deg,#F87171,#DC2626);border-color:#FCA5A5}
+.stop{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(239,68,68,.1);border:1px solid rgba(248,113,113,.3);color:#FECACA;font-weight:600;font-size:14px}
+.qr{display:flex;flex-wrap:wrap;gap:8px}
+.qr button{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:40px;font-size:13px;font-weight:500;color:#E0F2FE;background:linear-gradient(90deg,rgba(34,211,238,.1),rgba(139,92,246,.1));border:1px solid rgba(103,232,249,.45);transition:.2s}
+.qr button:hover{box-shadow:0 0 16px rgba(34,211,238,.35);transform:translateY(-1px)}
+.qr svg{width:15px;height:15px}
+.typing{display:inline-flex;gap:6px;padding:14px 16px;border-radius:18px}
+.typing i{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--ice2),var(--violet2));box-shadow:0 0 8px var(--ice2);animation:bounce 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-6px);opacity:1}}
+@keyframes pop{from{opacity:.001;transform:translateY(10px) scale(.96)}}
+.composer{padding:14px 22px 14px;border-top:1px solid rgba(255,255,255,.08);background:rgba(5,11,28,.4);display:flex;flex-direction:column;gap:8px;align-items:center}
+.cbox{width:100%;display:flex;gap:10px;align-items:center;padding:8px;border-radius:20px;background:rgba(10,20,48,.7);border:1.5px solid transparent;
+  background-image:linear-gradient(rgba(10,20,48,.92),rgba(10,20,48,.92)),linear-gradient(90deg,var(--ice2),#818CF8,#C084FC);background-origin:border-box;background-clip:padding-box,border-box;box-shadow:0 0 30px rgba(34,211,238,.2)}
+.cbox input{flex:1;min-width:0;border:0;background:none;outline:none;padding:10px 4px;font-size:15px}
+.sq{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.07);color:#CFE3FF;flex:none;transition:.2s}
+.sq:hover{background:rgba(255,255,255,.12)}
+.sq.send{background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(59,130,246,.7),inset 0 1px 1px rgba(255,255,255,.5)}
+.sq.send:hover{transform:scale(1.06) rotate(-8deg)}
+
+/* ---------- diagnose ---------- */
+.banner{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:26px 30px;border-radius:24px;
+  background:linear-gradient(120deg,rgba(14,165,233,.9),rgba(59,130,246,.9) 50%,rgba(124,58,237,.9));border:1px solid rgba(255,255,255,.25);box-shadow:0 20px 50px -10px rgba(59,130,246,.55)}
+.banner::before{content:"";position:absolute;width:260px;height:260px;right:-60px;top:-110px;border-radius:50%;border:1px solid rgba(255,255,255,.25);box-shadow:0 0 0 40px rgba(255,255,255,.04),0 0 0 80px rgba(255,255,255,.03)}
+.banner h2{font-size:22px;font-weight:800;display:flex;gap:10px;align-items:center}
+.banner p{color:#E0ECFF;margin-top:6px}
+.stepper{position:relative;display:flex;gap:8px;align-items:center}
+.st{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#DCE6FF;padding:7px 12px 7px 7px;border-radius:40px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22)}
+.st i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:rgba(255,255,255,.18)}
+.st.on{background:#fff;color:#3730A3}.st.on i{background:var(--grad);color:#fff}
+.st.done i{background:#34D399;color:#04201A}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tile{display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:var(--glass);border:1px solid rgba(255,255,255,.12);text-align:left;transition:.25s}
+.tile b{display:block;font-size:16px}.tile small{color:var(--muted);font-size:12px}
+.tile:hover{border-color:rgba(103,232,249,.4)}
+.tile[aria-pressed="true"]{background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(139,92,246,.16));border-color:rgba(103,232,249,.85);box-shadow:0 0 30px rgba(34,211,238,.3)}
+.tile .orb{transition:transform .35s cubic-bezier(.2,.9,.3,1.4)}
+.tile[aria-pressed="true"] .orb{transform:scale(1.08) rotate(-6deg)}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.result{display:none;flex-direction:column;gap:14px}
+.result.show{display:flex;animation:enter .5s}
+.cause{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center}
+.bar{grid-column:1/-1;height:8px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:inherit;background:var(--grad);box-shadow:0 0 12px var(--ice);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+
+/* ---------- compare ---------- */
+.vs-wrap{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch}
+.dev{display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px;border-radius:22px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.1);text-align:center}
+.dev .lab{font-size:12px;font-weight:700;letter-spacing:.14em;color:#9FB3D1}
+.dev .orb{width:84px;height:84px;border-radius:26px}
+.dev .inp{width:100%}
+.vs{align-self:center;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;background:var(--grad);box-shadow:0 0 30px rgba(34,211,238,.6),0 0 60px rgba(139,92,246,.4);animation:pulse2 2.4s ease-in-out infinite}
+@keyframes pulse2{50%{box-shadow:0 0 44px rgba(34,211,238,.9),0 0 90px rgba(139,92,246,.6);transform:scale(1.06)}}
+.skel{width:100%;display:flex;flex-direction:column;gap:10px}
+.skel span{height:10px;border-radius:6px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.14),rgba(255,255,255,.05));background-size:200% 100%;animation:shim 1.8s linear infinite}
+.skel span:nth-child(2){width:80%}.skel span:nth-child(3){width:60%}
+@keyframes shim{to{background-position:-200% 0}}
+.spec{width:100%;border-collapse:collapse;font-size:14px}
+.spec th,.spec td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left}
+.spec th{color:var(--muted);font-weight:500;width:28%}
+.spec td{font-variant-numeric:tabular-nums}
+.win{color:#6EE7B7;font-weight:700}
+.win::after{content:" ✓";}
+.tbl{overflow-x:auto}
+
+/* ---------- estimate ---------- */
+.est{display:grid;grid-template-columns:1.35fr 1fr;gap:20px;align-items:start}
+.sum{position:sticky;top:96px;display:flex;flex-direction:column;gap:14px}
+.line{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07);font-variant-numeric:tabular-nums}
+.line span{color:#B8C8E4}.line b{font-weight:600}
+.stack{display:flex;height:12px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.06)}
+.stack i{transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:8px;height:8px;border-radius:3px}
+.total{padding:22px;border-radius:20px;background:linear-gradient(120deg,#0EA5E9,#3B82F6 50%,#7C3AED);box-shadow:0 16px 40px -8px rgba(59,130,246,.65),inset 0 1px 1px rgba(255,255,255,.35);position:relative;overflow:hidden}
+.total::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.25) 45%,transparent 60%);transform:translateX(-100%);animation:sheen 4s ease-in-out infinite}
+@keyframes sheen{60%,100%{transform:translateX(100%)}}
+.total small{font-size:12px;letter-spacing:.12em;font-weight:600;color:#E0ECFF}
+.total b{display:block;font-size:clamp(28px,3vw,38px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.unit{font-size:12px;color:var(--dim)}
+
+/* ---------- camera ---------- */
+.cam-head{display:flex;gap:20px;align-items:center}
+.cam-head .orb{width:88px;height:88px;border-radius:26px;--a:#C084FC;--b:#7C3AED;--c1:rgba(192,132,252,.5)}
+.info{display:flex;gap:14px;align-items:flex-start;padding:16px 20px;border-radius:18px;background:rgba(34,211,238,.07);border:1px solid rgba(103,232,249,.3);color:#B8E6F5}
+.info b{color:#A5F3FC;display:block}
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;min-height:330px;padding:28px;border-radius:20px;background:rgba(10,20,48,.45);overflow:hidden;cursor:pointer}
+.drop .c{position:absolute;width:38px;height:38px;border:3px solid var(--ice2);filter:drop-shadow(0 0 6px var(--ice))}
+.c.tl{top:14px;left:14px;border-right:0;border-bottom:0;border-radius:12px 0 0 0}.c.tr{top:14px;right:14px;border-left:0;border-bottom:0;border-radius:0 12px 0 0}
+.c.bl{bottom:14px;left:14px;border-right:0;border-top:0;border-radius:0 0 0 12px}.c.br{bottom:14px;right:14px;border-left:0;border-top:0;border-radius:0 0 12px 0}
+.scan{position:absolute;left:6%;right:6%;height:2px;top:10%;background:linear-gradient(90deg,transparent,var(--ice2),transparent);box-shadow:0 0 18px 4px rgba(34,211,238,.6);animation:scan 3s ease-in-out infinite}
+@keyframes scan{50%{top:88%}}
+.drop .orb{width:84px;height:84px;border-radius:24px}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9}
+.drop:hover .orb{transform:scale(1.06)}
+.count{text-align:right;font-size:12px;color:var(--dim)}
+.inp textarea{resize:vertical;min-height:150px;line-height:1.6}
+.res-cam{display:none}.res-cam.show{display:flex;animation:enter .5s}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;padding:12px 18px;border-radius:14px;background:rgba(10,20,48,.92);border:1px solid rgba(103,232,249,.5);box-shadow:0 0 30px rgba(34,211,238,.3);font-size:14px;transition:.35s;z-index:50;pointer-events:none;display:flex;gap:8px;align-items:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){.tools{grid-template-columns:repeat(2,1fr)}.hero .orbit{opacity:.35;right:-80px}.est{grid-template-columns:1fr}.sum{position:static}.qs{display:none}}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sb{position:fixed;left:0;top:0;bottom:0;width:272px;transform:translateX(-105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);padding-left:max(18px,env(safe-area-inset-left,0px))}
+  .sb.open{transform:none;box-shadow:30px 0 60px rgba(0,0,0,.5)}
+  .menu{display:grid}
+  .login{grid-template-columns:1fr}.login .orbit{width:min(320px,70vw)}.lg-art .float{display:none}
+  .grid2,.f3,.tiles,.f2{grid-template-columns:1fr}
+  .vs-wrap{grid-template-columns:1fr}.vs{margin:-6px auto}
+  .live span{display:none}.live{padding:10px}
+}
+@media (max-width:700px){.hero .orbit{display:none}}
+@media (max-width:560px){
+  .tools{grid-template-columns:1fr}.hero{padding:28px 22px}.lcard{padding:26px}
+  .tb{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .crumb .ws{display:none}.tb .ibtn.bell{display:none}.temp{display:none}
+  .msgs{padding:18px 14px}.composer{padding:12px}.cam-head .orb{width:64px;height:64px}
+  .login{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="msg" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></symbol>
+  <symbol id="camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="sliders" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol>
+  <symbol id="book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+  <symbol id="snow" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M9 4l3 3 3-3M9 20l3-3 3 3M4 9l3 3-3 3M20 9l-3 3 3 3"/></symbol>
+  <symbol id="box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+  <symbol id="wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></symbol>
+  <symbol id="history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="arrowR" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="arrowL" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="arrowUR" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="thermo" viewBox="0 0 24 24"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/></symbol>
+  <symbol id="zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></symbol>
+  <symbol id="alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3zM12 9v4M12 17h.01"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3-3-9 9"/></symbol>
+  <symbol id="imgplus" viewBox="0 0 24 24"><path d="M16 5h6M19 2v6M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/><circle cx="9" cy="9" r="2"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="fridge" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14M9 5v2M9 13v3"/></symbol>
+  <symbol id="logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+</svg>
+
+<div class="sky" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><canvas id="flakes"></canvas></div>
+
+<div class="app">
+<!-- ============ LOGIN ============ -->
+<section class="login" id="v-login" aria-label="Đăng nhập">
+  <div class="lg-art">
+    <div class="brand"><div class="logo"><svg class="i"><use href="#snow"/></svg></div><div><b>SmartCool <span>AI</span></b><small>Trợ lý ngành điện lạnh</small></div></div>
+    <div class="orbit">
+      <div class="ring r1"><i></i></div><div class="ring r2"><i></i></div><div class="ring r3"></div>
+      <div class="sphere"><svg class="i"><use href="#snow"/></svg></div>
+      <div class="float" style="right:-4%;top:12%"><div class="orb"><svg class="i"><use href="#thermo"/></svg></div><div><small>Nhiệt độ phòng</small><b>24°C · Ổn định</b></div></div>
+      <div class="float" style="left:-6%;bottom:16%;animation-delay:-3s"><div class="orb" style="--a:#A78BFA;--b:#7C3AED;--c1:rgba(167,139,250,.5)"><svg class="i"><use href="#sparkles"/></svg></div><div><small>Trợ lý AI</small><b>Sẵn sàng 24/7</b></div></div>
+    </div>
+    <div class="lg-copy">
+      <span class="pill"><span class="dot" style="background:var(--ice2);box-shadow:0 0 8px var(--ice2)"></span>TRỢ LÝ ĐIỆN LẠNH THẾ HỆ MỚI</span>
+      <h1>Làm chủ mọi thiết bị<br><span class="gt">điện lạnh cùng AI.</span></h1>
+      <p>Chẩn đoán sự cố, tư vấn thiết bị và dự toán chi phí chỉ trong vài giây.</p>
+    </div>
+  </div>
+  <form class="lcard glass" id="loginForm" novalidate>
+    <div>
+      <div class="eyebrow gt">Chào mừng đến SmartCool AI</div>
+      <h2>Đăng nhập</h2>
+      <p class="muted" style="margin-top:6px">Đăng nhập để khám phá các tính năng điện lạnh thông minh.</p>
+    </div>
+    <div class="field"><label for="em">Email</label><div class="inp"><svg class="i"><use href="#mail"/></svg><input id="em" type="email" placeholder="email@example.com" autocomplete="email"></div></div>
+    <div class="field"><label for="pw">Mật khẩu</label><div class="inp"><svg class="i"><use href="#lock"/></svg><input id="pw" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password"></div></div>
+    <div class="row"><label class="chk"><input type="checkbox" id="rem" checked> Ghi nhớ đăng nhập</label><a class="link" href="#login" data-toast="Vui lòng liên hệ quản trị viên để đặt lại mật khẩu.">Quên mật khẩu?</a></div>
+    <button class="btn" type="submit">Đăng nhập <svg class="i"><use href="#arrowR"/></svg></button>
+    <div class="or">hoặc</div>
+    <a class="ghost" href="#home" style="text-decoration:none"><svg class="i"><use href="#sparkles"/></svg>Tiếp tục không cần tài khoản</a>
+    <p style="text-align:center;font-size:14px" class="muted">Chưa có tài khoản? <a class="link" href="#login" data-toast="Tính năng đăng ký sắp ra mắt.">Đăng ký ngay</a></p>
+    <p class="note" style="text-align:center">Tài khoản dùng chung với ứng dụng SmartCool AI trên điện thoại.</p>
+  </form>
+</section>
+
+<!-- ============ SHELL ============ -->
+<div class="shell" id="shell" hidden>
+  <aside class="sb" id="sb" aria-label="Điều hướng">
+    <div class="brand"><div class="logo"><svg class="i"><use href="#snow"/></svg></div><div><b>SmartCool <span>AI</span></b><small>Trợ lý ngành điện lạnh</small></div></div>
+    <div class="cap">KHÁM PHÁ</div>
+    <a class="nav" href="#home" data-v="home"><svg class="i"><use href="#home"/></svg>Trang chủ</a>
+    <a class="nav" href="#assistant" data-v="assistant"><svg class="i"><use href="#msg"/></svg>Trợ lý AI<span class="badge">AI</span></a>
+    <a class="nav" href="#camera" data-v="camera"><svg class="i"><use href="#camera"/></svg>AI Camera</a>
+    <a class="nav" href="#diagnose" data-v="diagnose"><svg class="i"><use href="#activity"/></svg>Chẩn đoán sự cố</a>
+    <a class="nav" href="#home" data-soon><svg class="i"><use href="#wallet"/></svg>Tư vấn mua thiết bị</a>
+    <a class="nav" href="#compare" data-v="compare"><svg class="i"><use href="#sliders"/></svg>So sánh thiết bị</a>
+    <a class="nav" href="#home" data-soon><svg class="i"><use href="#book"/></svg>Thư viện kiến thức</a>
+    <a class="nav" href="#home" data-soon><svg class="i"><use href="#thermo"/></svg>Thiết bị điện lạnh</a>
+    <a class="nav" href="#estimate" data-v="estimate"><svg class="i"><use href="#box"/></svg>Dự toán chi phí</a>
+    <a class="nav" href="#home" data-soon><svg class="i"><use href="#wrench"/></svg>Hướng dẫn lắp đặt</a>
+    <a class="nav" href="#home" data-soon><svg class="i"><use href="#history"/></svg>Lịch sử</a>
+    <a class="nav" href="#login"><svg class="i"><use href="#logout"/></svg>Đăng xuất</a>
+    <div class="promo"><svg class="i"><use href="#shield"/></svg><b>Trợ lý luôn bên bạn</b><p>Khám phá thiết bị, lựa chọn thông minh, vận hành an toàn.</p></div>
+    <div class="me"><div class="av"></div><div><b>Tài khoản khách</b><small>Thành viên SmartCool</small></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="tb">
+      <div class="crumb"><button class="ibtn menu" id="menuBtn" aria-label="Mở menu"><svg class="i"><use href="#menu"/></svg></button><span class="ws">Không gian làm việc</span><span class="ws" style="color:#3F5378">/</span><b id="crumb">Trang chủ</b></div>
+      <div class="tb-r">
+        <div class="qs"><svg class="i" style="width:16px"><use href="#search"/></svg>Tìm nhanh…<kbd>Ctrl K</kbd></div>
+        <div class="live"><i class="dot"></i><span>AI đang hoạt động</span></div>
+        <button class="ibtn bell" aria-label="Thông báo" data-toast="Chưa có thông báo mới."><svg class="i" style="width:18px"><use href="#bell"/></svg></button>
+        <div class="av" role="img" aria-label="Ảnh đại diện"></div>
+      </div>
+    </header>
+
+    <main class="content">
+<!-- ============ HOME ============ -->
+<section class="view" id="v-home" data-title="Trang chủ">
+  <div class="ph greet">
+    <div>
+      <span style="display:inline-flex;gap:8px;align-items:center;color:#9FD8F0;font-weight:500"><svg class="i" style="width:16px;color:var(--ice2)"><use href="#sparkles"/></svg>Xin chào, chúc bạn một ngày mát lành!</span>
+      <h1>Hôm nay bạn cần <span class="gt">hỗ trợ gì?</span></h1>
+      <p>Chuyên gia điện lạnh trong tầm tay: hỏi, chụp, chẩn đoán và dự toán.</p>
+    </div>
+    <div class="temp glass"><div class="orb" style="width:52px;height:52px;border-radius:16px;--b:#6366F1"><svg class="i"><use href="#thermo"/></svg></div><div><b id="tempV">24°C</b> <span style="color:var(--ice2);font-weight:500;font-size:14px">· Mát dịu</span><small style="display:block;font-size:12px" class="muted">Máy lạnh phòng khách</small></div></div>
+  </div>
+  <form class="search glass" id="homeAsk"><svg class="i" style="width:22px;color:var(--ice2)"><use href="#search"/></svg><input id="homeQ" placeholder="Hỏi AI hoặc tìm chức năng điện lạnh…" aria-label="Hỏi AI"><button class="btn" type="submit">Hỏi AI</button></form>
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="pill" style="background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff;align-self:flex-start"><span class="dot"></span>TRỢ LÝ ĐIỆN LẠNH</span>
+      <h2>Có SmartCool AI,<br>mọi vấn đề dễ dàng hơn.</h2>
+      <p>Hỏi đáp sự cố, tư vấn thiết bị và khám phá kiến thức điện lạnh ngay trên SmartCool AI.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap"><a class="white" href="#assistant"><svg class="i" style="color:#4F46E5"><use href="#sparkles"/></svg>Trò chuyện với AI<svg class="i" style="color:#4F46E5"><use href="#arrowR"/></svg></a><a class="ghost" href="#camera"><svg class="i"><use href="#camera"/></svg>Chụp ảnh thiết bị</a></div>
+    </div>
+    <div class="orbit" aria-hidden="true">
+      <div class="ring r1"><i></i></div><div class="ring r2"><i></i></div><div class="ring r3"></div>
+      <div class="sphere"><svg class="i"><use href="#snow"/></svg></div>
+      <div class="float" style="left:-14%;top:6%"><div class="orb" style="--a:#FBBF24;--b:#F97316;--c1:rgba(251,191,36,.5)"><svg class="i"><use href="#zap"/></svg></div><div><small>Tiết kiệm điện</small><b>Chế độ Inverter</b></div></div>
+      <div class="float" style="right:-2%;bottom:6%;animation-delay:-3.5s"><div class="orb" style="--a:#34D399;--b:#059669;--c1:rgba(52,211,153,.5)"><svg class="i"><use href="#shield"/></svg></div><div><small>An toàn</small><b>Đã kiểm tra</b></div></div>
+    </div>
+  </div>
+  <div class="ph" style="margin-top:6px"><div><h2 style="font-size:26px;font-weight:700">Công cụ thông minh</h2><p class="muted" style="margin-top:4px">Khám phá các tiện ích dành cho bạn</p></div><span class="pill">8 công cụ</span></div>
+  <div class="tools" id="tools"></div>
+</section>
+
+<!-- ============ ASSISTANT ============ -->
+<section class="view" id="v-assistant" data-title="Trợ lý AI">
+  <div class="chat glass">
+    <div class="chat-h">
+      <a class="ibtn" href="#home" aria-label="Quay lại"><svg class="i" style="width:18px"><use href="#arrowL"/></svg></a>
+      <div class="orb"><svg class="i"><use href="#snow"/></svg></div>
+      <div style="flex:1;min-width:0"><b>SmartCool AI</b><small><i class="dot"></i>Đang trực tuyến · Trợ lý điện lạnh thông minh</small></div>
+      <button class="ghost" id="newChat"><svg class="i"><use href="#plus"/></svg><span>Cuộc trò chuyện mới</span></button>
+    </div>
+    <div class="msgs" id="msgs" aria-live="polite"></div>
+    <div class="composer">
+      <form class="cbox" id="chatForm">
+        <button type="button" class="sq" aria-label="Đính kèm" data-toast="Dùng AI Camera để gửi ảnh thiết bị."><svg class="i"><use href="#plus"/></svg></button>
+        <input id="chatIn" placeholder="Hỏi SmartCool AI về máy lạnh, tủ lạnh, tủ đông…" aria-label="Tin nhắn">
+        <button type="button" class="sq" aria-label="Nói" data-toast="Nhập liệu bằng giọng nói sắp ra mắt."><svg class="i"><use href="#mic"/></svg></button>
+        <button class="sq send" aria-label="Gửi"><svg class="i"><use href="#send"/></svg></button>
+      </form>
+      <p class="note">SmartCool AI có thể sai sót. Với sự cố điện, hãy liên hệ kỹ thuật viên.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIAGNOSE ============ -->
+<section class="view" id="v-diagnose" data-title="Chẩn đoán sự cố">
+  <div class="ph"><div><a class="back" href="#home"><svg class="i" style="width:16px"><use href="#arrowL"/></svg>Quay lại</a><h1>Chẩn đoán <span class="gt">thiết bị</span></h1><p>Phân tích sự cố điện lạnh thông minh</p></div><button class="ghost" data-toast="Chưa có lần chẩn đoán nào."><svg class="i"><use href="#history"/></svg>Lịch sử (0)</button></div>
+  <div class="banner">
+    <div style="position:relative"><h2><svg class="i" style="width:24px"><use href="#wrench"/></svg>Thiết bị của bạn gặp sự cố?</h2><p>Cung cấp thông tin để khoanh vùng nguyên nhân.</p></div>
+    <div class="stepper" id="dxSteps"><span class="st on"><i>1</i>Thiết bị</span><span class="st"><i>2</i>Thông tin</span><span class="st"><i>3</i>Triệu chứng</span></div>
+  </div>
+  <div class="glass card">
+    <div class="sec-t"><span class="num">01</span>Chọn loại thiết bị</div>
+    <div class="tiles" data-group="dxType">
+      <button class="tile" aria-pressed="true"><div class="orb"><svg class="i"><use href="#snow"/></svg></div><div><b>Máy lạnh</b><small>Điều hoà treo tường, âm trần</small></div></button>
+      <button class="tile" aria-pressed="false"><div class="orb" style="--a:#60A5FA;--b:#6366F1"><svg class="i"><use href="#fridge"/></svg></div><div><b>Tủ lạnh</b><small>Ngăn đá trên, side by side</small></div></button>
+      <button class="tile" aria-pressed="false"><div class="orb" style="--a:#C084FC;--b:#7C3AED;--c1:rgba(192,132,252,.5)"><svg class="i"><use href="#box"/></svg></div><div><b>Tủ đông</b><small>Tủ đông nằm, tủ mát</small></div></button>
+    </div>
+  </div>
+  <div class="glass card" style="display:flex;flex-direction:column;gap:18px">
+    <div class="sec-t" style="margin:0"><span class="num">02</span>Thông tin thiết bị</div>
+    <div class="chips" data-group="brand" data-fill="dxBrand">
+      <button class="chip" aria-pressed="true">Daikin</button><button class="chip" aria-pressed="false">Panasonic</button><button class="chip" aria-pressed="false">LG</button><button class="chip" aria-pressed="false">Casper</button><button class="chip" aria-pressed="false">Samsung</button><button class="chip" aria-pressed="false">Toshiba</button><button class="chip" aria-pressed="false">Mitsubishi</button><button class="chip" aria-pressed="false">Sharp</button><button class="chip" aria-pressed="false">Khác</button>
+    </div>
+    <div class="f3">
+      <div class="field"><label for="dxBrand">Hãng sản xuất</label><div class="inp"><input id="dxBrand" value="Daikin"></div></div>
+      <div class="field"><label for="dxModel">Model</label><div class="inp"><input id="dxModel" placeholder="VD: FTKB35XVMV"></div></div>
+      <div class="field"><label for="dxCode">Mã lỗi (nếu có)</label><div class="inp"><input id="dxCode" placeholder="VD: U4, E7, H6"></div></div>
+    </div>
+    <p class="note">Mã lỗi cần đối chiếu tài liệu đúng model.</p>
+  </div>
+  <div class="glass card" style="display:flex;flex-direction:column;gap:18px">
+    <div class="sec-t" style="margin:0"><span class="num">03</span>Triệu chứng đang gặp</div>
+    <div class="chips" data-group="sym" data-multi>
+      <button class="chip" aria-pressed="true">Không mát / kém lạnh</button><button class="chip" aria-pressed="false">Chảy nước</button><button class="chip" aria-pressed="false">Kêu to, rung</button><button class="chip" aria-pressed="false">Đèn báo nhấp nháy</button><button class="chip" aria-pressed="false">Có mùi lạ</button><button class="chip" aria-pressed="false">Tự tắt</button><button class="chip" aria-pressed="false">Đóng tuyết dàn lạnh</button>
+    </div>
+    <div class="row"><p class="note">Đã chọn <b id="symN" style="color:var(--ice2)">1</b> triệu chứng</p><button class="btn" id="dxRun"><svg class="i"><use href="#sparkles"/></svg>Chẩn đoán với AI</button></div>
+    <div class="result" id="dxRes">
+      <div class="row"><h3 style="font-size:18px">Nguyên nhân có thể</h3><span class="tag"><svg class="i" style="width:12px"><use href="#shield"/></svg>Ưu tiên an toàn</span></div>
+      <div class="cause"><span>Lưới lọc bụi bẩn, dàn lạnh bám bụi</span><b>72%</b><div class="bar"><i data-w="72"></i></div></div>
+      <div class="cause"><span>Thiếu gas / rò rỉ gas</span><b>48%</b><div class="bar"><i data-w="48"></i></div></div>
+      <div class="cause"><span>Tụ quạt dàn nóng yếu</span><b>31%</b><div class="bar"><i data-w="31"></i></div></div>
+      <div class="row"><p class="muted" style="font-size:14px">Gợi ý: vệ sinh lưới lọc trước, nếu vẫn kém lạnh hãy gọi kỹ thuật viên kiểm tra áp suất gas.</p><a class="ghost" href="#assistant" style="text-decoration:none"><svg class="i"><use href="#msg"/></svg>Hỏi thêm AI</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section class="view" id="v-compare" data-title="So sánh thiết bị">
+  <div class="ph"><div><a class="back" href="#home"><svg class="i" style="width:16px"><use href="#arrowL"/></svg>Quay lại</a><h1>So sánh <span class="gt">thiết bị</span></h1><p>Đối chiếu hai thiết bị cùng loại để lựa chọn phù hợp.</p></div></div>
+  <div class="glass card" style="display:flex;flex-direction:column;gap:22px">
+    <div><div class="sec-t">Loại thiết bị</div>
+      <div class="chips" data-group="cmpType"><button class="chip" aria-pressed="true" data-k="ac"><svg class="i" style="width:16px"><use href="#snow"/></svg>Máy lạnh</button><button class="chip" aria-pressed="false" data-k="fr"><svg class="i" style="width:16px"><use href="#fridge"/></svg>Tủ lạnh</button><button class="chip" aria-pressed="false" data-k="fz"><svg class="i" style="width:16px"><use href="#box"/></svg>Tủ đông</button></div></div>
+    <div class="vs-wrap">
+      <div class="dev"><span class="lab">THIẾT BỊ A</span><div class="orb"><svg class="i"><use href="#snow"/></svg></div><div class="inp"><select id="devA" aria-label="Chọn thiết bị A"></select><svg class="i" style="width:18px"><use href="#chev"/></svg></div><div class="skel"><span></span><span></span><span></span></div></div>
+      <div class="vs">VS</div>
+      <div class="dev"><span class="lab">THIẾT BỊ B</span><div class="orb" style="--a:#A78BFA;--b:#7C3AED;--c1:rgba(167,139,250,.5)"><svg class="i"><use href="#snow"/></svg></div><div class="inp"><select id="devB" aria-label="Chọn thiết bị B"></select><svg class="i" style="width:18px"><use href="#chev"/></svg></div><div class="skel"><span></span><span></span><span></span></div></div>
+    </div>
+    <div class="row"><button class="btn" id="cmpRun" disabled><svg class="i"><use href="#sliders"/></svg>So sánh ngay</button><p class="note">Chọn hai thiết bị khác nhau để so sánh.</p></div>
+    <div class="result" id="cmpRes"><div class="tbl"><table class="spec" id="spec"></table></div></div>
+  </div>
+  <p class="note">Giá và thông số mang tính tham khảo. Kiểm tra model và giá thực tế trước khi mua.</p>
+</section>
+
+<!-- ============ ESTIMATE ============ -->
+<section class="view" id="v-estimate" data-title="Dự toán chi phí">
+  <div class="ph"><div><a class="back" href="#home"><svg class="i" style="width:16px"><use href="#arrowL"/></svg>Quay lại</a><h1>Dự toán <span class="gt">chi phí</span></h1><p>Tính chi phí mua thiết bị, vật tư, nhân công và phát sinh.</p></div><button class="ghost" id="histBtn"><svg class="i"><use href="#history"/></svg>Lịch sử dự toán (<span id="histN">0</span>)</button></div>
+  <div class="est">
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <div class="glass card" style="display:flex;flex-direction:column;gap:20px">
+        <div><div class="sec-t"><span class="num">1</span>Loại thiết bị</div><div class="chips" data-group="esType"><button class="chip" aria-pressed="true"><svg class="i" style="width:16px"><use href="#snow"/></svg>Máy lạnh</button><button class="chip" aria-pressed="false"><svg class="i" style="width:16px"><use href="#fridge"/></svg>Tủ lạnh</button><button class="chip" aria-pressed="false"><svg class="i" style="width:16px"><use href="#box"/></svg>Tủ đông</button></div></div>
+        <div><div class="sec-t"><span class="num">2</span>Loại công việc</div><div class="chips" data-group="esJob"><button class="chip" aria-pressed="true" data-l="600000" data-m="850000">Mua và lắp đặt</button><button class="chip" aria-pressed="false" data-l="250000" data-m="150000">Bảo dưỡng</button><button class="chip" aria-pressed="false" data-l="400000" data-m="500000">Sửa chữa</button></div></div>
+      </div>
+      <div class="glass card" style="display:flex;flex-direction:column;gap:18px">
+        <div class="sec-t" style="margin:0"><span class="num">3</span>Thông tin thiết bị</div>
+        <div class="field"><label for="esName">Tên thiết bị / Model</label><div class="inp"><input id="esName" value="LG Dual Inverter 1.5 HP" placeholder="VD: LG Dual Inverter 1.5 HP"></div></div>
+        <div class="f2">
+          <div class="field"><label for="esQty">Số lượng</label><div class="inp"><input id="esQty" type="number" min="1" value="1" inputmode="numeric"></div></div>
+          <div class="field"><label for="esPrice">Đơn giá thiết bị</label><div class="inp"><input id="esPrice" type="number" min="0" step="10000" value="12490000" inputmode="numeric"><span class="unit">₫</span></div></div>
+          <div class="field"><label for="esMat">Vật tư (ống đồng, dây điện…)</label><div class="inp"><input id="esMat" type="number" min="0" step="10000" value="850000" inputmode="numeric"><span class="unit">₫</span></div></div>
+          <div class="field"><label for="esLab">Nhân công</label><div class="inp"><input id="esLab" type="number" min="0" step="10000" value="600000" inputmode="numeric"><span class="unit">₫</span></div></div>
+          <div class="field"><label for="esExt">Phát sinh</label><div class="inp"><input id="esExt" type="number" min="0" step="10000" value="200000" inputmode="numeric"><span class="unit">₫</span></div></div>
+          <div class="field"><label for="esRes">Dự phòng</label><div class="inp"><input id="esRes" type="number" min="0" max="30" value="5" inputmode="numeric"><span class="unit">%</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sum">
+      <div class="glass card">
+        <h3 style="font-size:20px;margin-bottom:6px">Bảng tổng hợp chi phí</h3>
+        <div class="line"><span>Thiết bị</span><b id="sDev">0 ₫</b></div>
+        <div class="line"><span>Vật tư</span><b id="sMat">0 ₫</b></div>
+        <div class="line"><span>Nhân công</span><b id="sLab">0 ₫</b></div>
+        <div class="line"><span>Phát sinh</span><b id="sExt">0 ₫</b></div>
+        <div class="line"><span>Tạm tính</span><b id="sSub">0 ₫</b></div>
+        <div class="line"><span>Dự phòng (<span id="sPct">5</span>%)</span><b id="sRes">0 ₫</b></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin:18px 0">
+          <div class="stack" id="stack"><i style="background:#3B82F6"></i><i style="background:#22D3EE"></i><i style="background:#A78BFA"></i><i style="background:#F472B6"></i><i style="background:#FBBF24"></i></div>
+          <div class="legend"><span><i style="background:#3B82F6"></i>Thiết bị</span><span><i style="background:#22D3EE"></i>Vật tư</span><span><i style="background:#A78BFA"></i>Nhân công</span><span><i style="background:#F472B6"></i>Phát sinh</span><span><i style="background:#FBBF24"></i>Dự phòng</span></div>
+        </div>
+        <div class="total"><small>TỔNG CHI PHÍ DỰ KIẾN</small><b id="sTot">0 ₫</b></div>
+      </div>
+      <button class="btn" id="esSave"><svg class="i"><use href="#check"/></svg>Lưu dự toán</button>
+      <button class="ghost" id="esNew"><svg class="i"><use href="#plus"/></svg>Tạo dự toán mới</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CAMERA ============ -->
+<section class="view" id="v-camera" data-title="AI Camera">
+  <div><a class="back" href="#home"><svg class="i" style="width:16px"><use href="#arrowL"/></svg>Quay lại</a>
+  <div class="cam-head"><div class="orb"><svg class="i"><use href="#camera"/></svg></div><div><div class="eyebrow gt">Công cụ thông minh</div><h1 style="font-size:clamp(30px,4vw,42px);font-weight:800">AI Camera</h1><p style="color:#93A8CB">Chụp ảnh hoặc tải ảnh thiết bị điện lạnh để chuẩn bị cho quá trình phân tích sự cố.</p></div></div></div>
+  <div class="info"><svg class="i" style="color:var(--ice2)"><use href="#info"/></svg><div><b>Mẹo chụp ảnh</b>Chụp rõ tem thông số, màn hình mã lỗi và vị trí hư hỏng để AI nhận diện chính xác hơn.</div></div>
+  <div class="grid2">
+    <div class="glass card" style="display:flex;flex-direction:column;gap:18px">
+      <div class="sec-t" style="margin:0"><span class="num">01</span><div>Hình ảnh thiết bị<small style="display:block;font-size:13px;font-weight:400" class="muted">Chụp hoặc tải ảnh cần kiểm tra</small></div></div>
+      <label class="drop" for="camFile" id="drop">
+        <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span><span class="scan"></span>
+        <div class="orb" style="--a:#22D3EE;--b:#8B5CF6;transition:transform .3s"><svg class="i"><use href="#imgplus"/></svg></div>
+        <b style="font-size:18px">Chưa có hình ảnh</b>
+        <p class="muted" style="max-width:340px;font-size:14px">Hãy chọn một hình ảnh rõ nét của thiết bị, màn hình mã lỗi hoặc vị trí gặp sự cố.</p>
+        <span class="link">Nhấn để chọn hình ảnh</span><span class="note">Tệp ảnh tối đa 10 MB</span>
+      </label>
+      <input type="file" id="camFile" accept="image/*" hidden>
+      <div class="f2"><label class="btn" for="camFile"><svg class="i"><use href="#camera"/></svg>Chụp ảnh</label><label class="ghost" for="camFile"><svg class="i"><use href="#image"/></svg>Chọn ảnh</label></div>
+    </div>
+    <div class="glass card" style="display:flex;flex-direction:column;gap:16px">
+      <div class="sec-t" style="margin:0"><span class="num">02</span><div>Mô tả tình trạng<small style="display:block;font-size:13px;font-weight:400" class="muted">Cung cấp thông tin về thiết bị</small></div></div>
+      <div class="field"><label for="camTxt">Thông tin thiết bị</label><p class="muted" style="font-size:13px">Bạn có thể ghi tên thiết bị, hãng, model, mã lỗi hoặc triệu chứng đang gặp phải.</p><div class="inp"><textarea id="camTxt" maxlength="1000" placeholder="Ví dụ: Máy lạnh Daikin không mát, đèn báo nhấp nháy…"></textarea></div><div class="count"><span id="camN">0</span>/1000</div></div>
+      <div><p style="font-size:13px;font-weight:600;color:#C7D6EE;margin-bottom:10px">Gợi ý thông tin nên cung cấp</p><div class="qr" id="camHints"><button>Tên thiết bị</button><button>Thương hiệu</button><button>Model</button><button>Mã lỗi</button><button>Triệu chứng</button></div></div>
+      <button class="btn" id="camRun"><svg class="i"><use href="#sparkles"/></svg>Phân tích với AI</button>
+      <div class="res-cam warn" id="camRes" style="background:rgba(34,211,238,.08);border-color:rgba(103,232,249,.4);box-shadow:0 0 24px rgba(34,211,238,.15)"><div class="orb" style="--a:#22D3EE;--b:#3B82F6"><svg class="i"><use href="#sparkles"/></svg></div><p style="color:#DCE6FF">Đã nhận ảnh và mô tả. SmartCool AI đang nhận diện thiết bị, đọc mã lỗi và chuẩn bị hướng xử lý an toàn.</p></div>
+    </div>
+  </div>
+</section>
+    </main>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast" role="status"><svg class="i" style="width:16px;color:var(--ice2)"><use href="#info"/></svg><span></span></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt=n=>new Intl.NumberFormat('vi-VN').format(Math.round(n))+' ₫';
+const ico=n=>`<svg class="i"><use href="#${n}"/></svg>`;
+
+/* toast */
+let tt;function toast(m){const t=$('#toast');t.querySelector('span').textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600);}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-toast]');if(a){e.preventDefault();toast(a.dataset.toast);}const s=e.target.closest('[data-soon]');if(s){e.preventDefault();toast('Mục "'+s.textContent.trim()+'" sắp ra mắt.');}});
+
+/* snow particles */
+const cv=$("#flakes"),cx=cv.getContext('2d');let W,H,flakes=[];
+function size(){W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio;}
+size();addEventListener('resize',size);
+for(let i=0;i<90;i++)flakes.push({x:Math.random(),y:Math.random(),r:Math.random()*1.6+.4,s:Math.random()*.0006+.0002,d:Math.random()*Math.PI*2,a:Math.random()*.6+.2});
+function tick(){cx.clearRect(0,0,W,H);for(const f of flakes){f.y+=f.s;f.d+=.01;f.x+=Math.sin(f.d)*.0003;if(f.y>1){f.y=0;f.x=Math.random();}
+ cx.beginPath();cx.arc(f.x*W,f.y*H,f.r*devicePixelRatio,0,7);cx.fillStyle=`rgba(207,232,255,${f.a})`;cx.shadowBlur=8;cx.shadowColor='#67E8F9';cx.fill();}
+ if(!reduce)requestAnimationFrame(tick);}
+tick();
+
+/* tools */
+const tools=[['sparkles','Trợ lý AI','Hỏi đáp mọi sự cố điện lạnh 24/7','#22D3EE','#3B82F6','assistant'],['camera','AI Camera','Chụp ảnh thiết bị, nhận diện lỗi','#C084FC','#7C3AED','camera'],['activity','Chẩn đoán sự cố','Khoanh vùng nguyên nhân nhanh','#FB923C','#EF4444','diagnose'],['wallet','Tư vấn mua thiết bị','Chọn đúng công suất, nhu cầu','#34D399','#059669',''],['sliders','So sánh thiết bị','Đối chiếu thông số hai model','#60A5FA','#2563EB','compare'],['box','Dự toán chi phí','Tính chi phí trọn gói lắp đặt','#F472B6','#DB2777','estimate'],['wrench','Hướng dẫn lắp đặt','Từng bước chuẩn kỹ thuật','#FBBF24','#D97706',''],['book','Thư viện kiến thức','Mẹo vận hành và bảo dưỡng','#2DD4BF','#0D9488','']];
+$('#tools').innerHTML=tools.map(([i,t,d,a,b,v])=>`<a class="tool glass tilt" href="#${v||'home'}" ${v?'':'data-soon'} style="--a:${a};--b:${b};--c1:${b}80"><div class="top"><div class="orb">${ico(i)}</div><span class="go">${ico('arrowUR')}</span></div><div><b>${t}</b><small style="display:block">${d}</small></div></a>`).join('');
+/* tilt + spotlight */
+if(!reduce)document.addEventListener('pointermove',e=>{const el=e.target.closest('.tilt');$$('.tilt').forEach(n=>{if(n!==el)n.style.transform='';});if(!el)return;const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;el.style.transform=`perspective(700px) rotateX(${(.5-y)*8}deg) rotateY(${(x-.5)*10}deg) translateY(-4px)`;el.style.setProperty('--mx',x*100+'%');el.style.setProperty('--my',y*100+'%');});
+
+/* routing */
+const views=['home','assistant','diagnose','compare','estimate','camera'];
+function route(){let h=location.hash.slice(1)||'login';if(h!=='login'&&!views.includes(h))h='home';
+ const login=h==='login';$('#v-login').classList.toggle('show',login);$('#shell').hidden=login;
+ if(!login){$$('.view').forEach(v=>v.classList.toggle('show',v.id==='v-'+h));$$('.nav').forEach(n=>n.classList.toggle('on',n.dataset.v===h));$('#crumb').textContent=$('#v-'+h).dataset.title;$('#sb').classList.remove('open');}
+ scrollTo(0,0);if(h==='assistant')$('#msgs').scrollTop=1e6;}
+addEventListener('hashchange',route);route();
+$('#menuBtn').onclick=()=>$('#sb').classList.toggle('open');
+$('#loginForm').addEventListener('submit',e=>{e.preventDefault();location.hash='home';});
+
+/* chip / tile groups */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-group] > .chip, [data-group] > .tile');if(!b)return;const g=b.parentElement;
+ if(g.hasAttribute('data-multi'))b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');
+ else{[...g.children].forEach(c=>c.setAttribute('aria-pressed',c===b));}
+ g.dispatchEvent(new CustomEvent('pick',{detail:b}));});
+
+/* chat */
+const msgs=$('#msgs');
+const meta=()=>{const d=new Date();return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});};
+function uMsg(t){const d=document.createElement('div');d.className='m-u';d.innerHTML=`<p></p><small>${meta()} ✓</small>`;d.querySelector('p').textContent=t;msgs.append(d);msgs.scrollTop=1e6;}
+function aMsg(html,tag){const d=document.createElement('div');d.className='m-a';d.innerHTML=`<div class="orb">${ico('snow')}</div><div class="col"><div class="meta"><b>SmartCool AI</b>${meta()}${tag?`<span class="tag">${ico('shield')}${tag}</span>`:''}</div><div class="bub glass">${html}</div></div>`;msgs.append(d);msgs.scrollTop=1e6;return d;}
+const safety=`<div class="warn"><div class="orb">${ico('alert')}</div><div><b>CẢNH BÁO AN TOÀN</b><p>Thiết bị có dấu hiệu rò điện, cháy, phát khói hoặc mùi khét có thể gây nguy hiểm.</p></div></div>
+<ol class="steps"><li>Ngừng sử dụng thiết bị ngay.</li><li>Không chạm vào thiết bị nếu có nguy cơ điện giật.</li><li>Ngắt nguồn điện từ vị trí an toàn nếu có thể.</li><li>Liên hệ kỹ thuật viên có chuyên môn.</li><li class="hot">Nếu xảy ra cháy, hãy rời khỏi khu vực nguy hiểm và gọi 114.</li></ol>
+<div class="stop">${ico('alert')}Không tự tháo hoặc tiếp tục vận hành thiết bị.</div>`;
+const qr=`<div class="qr"><button data-q="Đặt lịch kỹ thuật viên giúp tôi">${ico('wrench')}Đặt lịch kỹ thuật viên</button><button data-q="Máy lạnh không mát thì kiểm tra gì?">${ico('activity')}Máy lạnh không mát</button><button data-q="Máy lạnh chảy nước phải làm sao?">${ico('image')}Máy lạnh chảy nước</button></div>`;
+function seed(){msgs.innerHTML='';uMsg('Máy lạnh nhà tôi có mùi khét và ổ cắm hơi nóng, tôi nên làm gì?');const a=aMsg(safety,'Ưu tiên an toàn');a.querySelector('.col').insertAdjacentHTML('beforeend',qr);}
+seed();
+function reply(q){const s=q.toLowerCase();
+ if(/khét|cháy|khói|giật|rò điện|nóng/.test(s))return[safety,'Ưu tiên an toàn'];
+ if(/không mát|kém lạnh|yếu/.test(s))return[`<p>Bạn kiểm tra lần lượt nhé:</p><ol class="steps"><li>Chế độ đang để <b>Cool</b>, nhiệt độ 24–26°C.</li><li>Vệ sinh lưới lọc bụi (2–4 tuần/lần).</li><li>Dàn nóng thông thoáng, quạt dàn nóng có quay.</li><li>Nếu vẫn kém lạnh, có thể thiếu gas: cần kỹ thuật viên đo áp suất.</li></ol>`];
+ if(/chảy nước|nhỏ nước|rỉ nước/.test(s))return[`<p>Máy lạnh chảy nước thường do:</p><ol class="steps"><li>Ống thoát nước nghẹt hoặc gập.</li><li>Dàn lạnh lắp nghiêng sai chiều thoát.</li><li>Khay nước bẩn, đầy.</li></ol><p class="muted">Ngắt điện trước khi lau khay nước. Thông ống thoát nên để kỹ thuật viên làm.</p>`];
+ if(/lịch|kỹ thuật viên|thợ/.test(s))return[`<p>Bạn chọn khung giờ và địa chỉ, SmartCool AI sẽ gửi yêu cầu cho kỹ thuật viên gần nhất.</p>`];
+ return[`<p>Mình đã nhận câu hỏi. Bạn cho mình biết thêm <b>loại thiết bị, hãng, model</b> và <b>mã lỗi</b> (nếu có) để tư vấn chính xác hơn nhé.</p>`];}
+function ask(q){if(!q.trim())return;uMsg(q);const t=document.createElement('div');t.className='m-a';t.innerHTML=`<div class="orb">${ico('snow')}</div><div class="typing glass"><i></i><i></i><i></i></div>`;msgs.append(t);msgs.scrollTop=1e6;
+ setTimeout(()=>{t.remove();const[h,tag]=reply(q);aMsg(h,tag);},reduce?200:1300);}
+$('#chatForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#chatIn').value;$('#chatIn').value='';ask(v);});
+msgs.addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)ask(b.dataset.q);});
+$('#newChat').onclick=()=>{msgs.innerHTML='';aMsg('<p>Xin chào! Mình là <b>SmartCool AI</b>. Bạn đang gặp vấn đề gì với máy lạnh, tủ lạnh hay tủ đông?</p>'+qr.replace('class="qr"','class="qr" style="margin-top:4px"'));};
+$('#homeAsk').addEventListener('submit',e=>{e.preventDefault();const q=$('#homeQ').value||'Máy lạnh không mát thì kiểm tra gì?';$('#homeQ').value='';location.hash='assistant';setTimeout(()=>ask(q),350);});
+
+/* diagnose */
+const syms=$('[data-group="sym"]');syms.addEventListener('pick',()=>{const n=syms.querySelectorAll('[aria-pressed="true"]').length;$('#symN').textContent=n;$$('#dxSteps .st')[2].classList.toggle('done',n>0);});
+$('[data-group="brand"]').addEventListener('pick',e=>{$('#dxBrand').value=e.detail.textContent;$$('#dxSteps .st')[0].classList.replace('on','done');$$('#dxSteps .st')[1].classList.add('on');});
+$('#dxRun').onclick=()=>{const r=$('#dxRes');r.classList.remove('show');void r.offsetWidth;r.querySelectorAll('.bar i').forEach(i=>i.style.width='0');r.classList.add('show');$$('#dxSteps .st').forEach(s=>{s.classList.remove('on');s.classList.add('done');});setTimeout(()=>r.querySelectorAll('.bar i').forEach(i=>i.style.width=i.dataset.w+'%'),60);};
+
+/* compare (sample data) */
+const DB={ac:[['Daikin FTKB35XVMV 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter','Điện năng/năm':'≈ 690 kWh','Độ ồn dàn lạnh':'21 dB','Gas':'R32','Giá tham khảo':'≈ 11,9 triệu'}],['LG V13WIN 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Dual Inverter','Điện năng/năm':'≈ 640 kWh','Độ ồn dàn lạnh':'19 dB','Gas':'R32','Giá tham khảo':'≈ 10,5 triệu'}],['Panasonic CU/CS-XU12 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter, Nanoe X','Điện năng/năm':'≈ 610 kWh','Độ ồn dàn lạnh':'20 dB','Gas':'R32','Giá tham khảo':'≈ 16,8 triệu'}]],
+ fr:[['Samsung RT38 380L',{'Dung tích':'380 L','Công nghệ':'Digital Inverter','Điện năng/năm':'≈ 310 kWh','Độ ồn':'38 dB','Gas':'R600a','Giá tham khảo':'≈ 11,2 triệu'}],['Panasonic NR-BX410 410L',{'Dung tích':'410 L','Công nghệ':'Inverter, Prime Fresh','Điện năng/năm':'≈ 295 kWh','Độ ồn':'36 dB','Gas':'R600a','Giá tham khảo':'≈ 14,9 triệu'}]],
+ fz:[['Sanaky VH-4099A 400L',{'Dung tích':'400 L','Công nghệ':'Thường','Điện năng/năm':'≈ 520 kWh','Độ ồn':'42 dB','Gas':'R600a','Giá tham khảo':'≈ 7,6 triệu'}],['Hòa Phát HCF 516 350L',{'Dung tích':'350 L','Công nghệ':'Inverter','Điện năng/năm':'≈ 410 kWh','Độ ồn':'40 dB','Gas':'R600a','Giá tham khảo':'≈ 8,9 triệu'}]]};
+let cmpK='ac';
+function fill(){const o='<option value="">Chọn thiết bị</option>'+DB[cmpK].map((d,i)=>`<option value="${i}">${d[0]}</option>`).join('');$('#devA').innerHTML=o;$('#devB').innerHTML=o;$('#cmpRes').classList.remove('show');chk();}
+function chk(){const a=$('#devA').value,b=$('#devB').value;$('#cmpRun').disabled=!(a!==''&&b!==''&&a!==b);}
+$('[data-group="cmpType"]').addEventListener('pick',e=>{cmpK=e.detail.dataset.k;fill();});
+$('#devA').onchange=$('#devB').onchange=chk;fill();
+const num=s=>parseFloat(String(s).replace(/[^\d,]/g,'').replace(',','.'))||0;
+const better={'Điện năng/năm':'low','Độ ồn dàn lạnh':'low','Độ ồn':'low','Giá tham khảo':'low','Dung tích':'high'};
+$('#cmpRun').onclick=()=>{const A=DB[cmpK][$('#devA').value],B=DB[cmpK][$('#devB').value];let h=`<tr><th></th><td><b>${A[0]}</b></td><td><b>${B[0]}</b></td></tr>`;
+ for(const k in A[1]){let ca='',cb='';if(better[k]){const x=num(A[1][k]),y=num(B[1][k]);if(x!==y){const aw=better[k]==='low'?x<y:x>y;ca=aw?'win':'';cb=aw?'':'win';}}h+=`<tr><th>${k}</th><td class="${ca}">${A[1][k]}</td><td class="${cb}">${B[1][k]}</td></tr>`;}
+ $('#spec').innerHTML=h;const r=$('#cmpRes');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');};
+
+/* estimate */
+const ids=['esQty','esPrice','esMat','esLab','esExt','esRes'];
+let shown=0;
+function anim(el,to){if(reduce){el.textContent=fmt(to);return;}const from=+el.dataset.v||0;el.dataset.v=to;const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/600),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(f);})(t0);}
+function calc(){const v=Object.fromEntries(ids.map(i=>[i,Math.max(0,+$('#'+i).value||0)]));const dev=v.esQty*v.esPrice,sub=dev+v.esMat+v.esLab+v.esExt,res=sub*Math.min(v.esRes,30)/100,tot=sub+res;
+ anim($('#sDev'),dev);anim($('#sMat'),v.esMat);anim($('#sLab'),v.esLab);anim($('#sExt'),v.esExt);anim($('#sSub'),sub);anim($('#sRes'),res);anim($('#sTot'),tot);$('#sPct').textContent=v.esRes;
+ const parts=[dev,v.esMat,v.esLab,v.esExt,res];[...$('#stack').children].forEach((i,k)=>i.style.width=(tot?parts[k]/tot*100:0)+'%');}
+ids.forEach(i=>$('#'+i).addEventListener('input',calc));
+$('[data-group="esJob"]').addEventListener('pick',e=>{$('#esLab').value=e.detail.dataset.l;$('#esMat').value=e.detail.dataset.m;if(e.detail.textContent!=='Mua và lắp đặt'){$('#esPrice').value=0;}else if(+$('#esPrice').value===0){$('#esPrice').value=12490000;}calc();});
+calc();
+$('#esSave').onclick=()=>{shown++;$('#histN').textContent=shown;toast('Đã lưu dự toán "'+($('#esName').value||'Không tên')+'".');};
+$('#esNew').onclick=()=>{$('#esName').value='';$('#esQty').value=1;$('#esPrice').value=0;$('#esMat').value=0;$('#esLab').value=0;$('#esExt').value=0;$('#esRes').value=5;calc();toast('Đã tạo dự toán mới.');};
+$('#histBtn').onclick=()=>toast(shown?`Bạn có ${shown} dự toán đã lưu trong phiên này.`:'Chưa có dự toán nào được lưu.');
+
+/* camera */
+$('#camTxt').addEventListener('input',e=>$('#camN').textContent=e.target.value.length);
+$('#camHints').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=$('#camTxt');t.value+=(t.value&&!t.value.endsWith(' ')?', ':'')+b.textContent+': ';t.focus();$('#camN').textContent=t.value.length;});
+$('#camFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;if(f.size>10*1024*1024){toast('Ảnh lớn hơn 10 MB. Hãy chọn ảnh nhỏ hơn.');return;}const r=new FileReader();r.onload=()=>{const d=$('#drop');d.querySelector('img')?.remove();const im=new Image();im.src=r.result;im.alt='Ảnh thiết bị đã chọn';d.prepend(im);toast('Đã chọn ảnh: '+f.name);};r.readAsDataURL(f);});
+$('#camRun').onclick=()=>{const r=$('#camRes');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');};
+
+/* home temp flicker */
+let tv=24;setInterval(()=>{tv=tv===24?23.5:24;$('#tempV').textContent=String(tv).replace('.',',')+'°C';},5000);
+})();
+</script>
+</body>
+</html>
