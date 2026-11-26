@@ -164,6 +164,14 @@ p{margin:0}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .link{color:var(--ice2);font-weight:600;font-size:14px;text-decoration:none}
 .or{display:flex;align-items:center;gap:12px;color:#6F86AC;font-size:12px}
+.gwrap{display:flex;justify-content:center;min-height:48px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 20px;border-radius:14px;background:#fff;color:#1F2937;font-weight:600;font-size:15px;border:1px solid rgba(255,255,255,.6);cursor:pointer;transition:.2s;box-shadow:0 8px 24px -8px rgba(0,0,0,.4)}
+.gbtn:hover{transform:translateY(-1px);box-shadow:0 12px 30px -8px rgba(34,211,238,.45)}
+.gbtn svg{width:20px;height:20px;flex:none}
+.gbtn[disabled]{opacity:.7;cursor:wait}
+#gsiBtn{width:100%;display:flex;justify-content:center}
+.lg-err{margin:0;padding:10px 14px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(248,113,113,.35);color:#FCA5A5;font-size:14px}
+.lg-err.ok{background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.35);color:#A5F3FC}
 .or::before,.or::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:#B8C8E4;cursor:pointer}
 .chk input{appearance:none;width:18px;height:18px;border-radius:5px;border:1px solid var(--line2);background:var(--glass);display:grid;place-items:center;margin:0}
@@ -412,16 +420,22 @@ p{margin:0}
   <form class="lcard glass" id="loginForm" novalidate>
     <div>
       <div class="eyebrow gt">Chào mừng đến SmartCool AI</div>
-      <h2>Đăng nhập</h2>
-      <p class="muted" style="margin-top:6px">Đăng nhập để khám phá các tính năng điện lạnh thông minh.</p>
+      <h2 id="lgTitle">Đăng nhập</h2>
+      <p class="muted" id="lgSub" style="margin-top:6px">Đăng nhập để khám phá các tính năng điện lạnh thông minh.</p>
     </div>
+    <div class="field" id="nameField" hidden><label for="fn">Họ và tên</label><div class="inp"><svg class="i"><use href="#user"/></svg><input id="fn" type="text" placeholder="Nguyễn Văn A" autocomplete="name"></div></div>
     <div class="field"><label for="em">Email</label><div class="inp"><svg class="i"><use href="#mail"/></svg><input id="em" type="email" placeholder="email@example.com" autocomplete="email"></div></div>
     <div class="field"><label for="pw">Mật khẩu</label><div class="inp"><svg class="i"><use href="#lock"/></svg><input id="pw" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password"></div></div>
     <div class="row"><label class="chk"><input type="checkbox" id="rem" checked> Ghi nhớ đăng nhập</label><a class="link" href="#login" data-toast="Vui lòng liên hệ quản trị viên để đặt lại mật khẩu.">Quên mật khẩu?</a></div>
-    <button class="btn" type="submit">Đăng nhập <svg class="i"><use href="#arrowR"/></svg></button>
+    <p class="lg-err" id="lgErr" role="alert" hidden></p>
+    <button class="btn" type="submit" id="lgSubmit"><span id="lgBtnText">Đăng nhập</span> <svg class="i"><use href="#arrowR"/></svg></button>
     <div class="or">hoặc</div>
+    <div class="gwrap">
+      <button class="gbtn" type="button" id="gBtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A11.9 11.9 0 0 1 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Đăng nhập bằng Google</button>
+      <div id="gsiBtn" hidden></div>
+    </div>
     <a class="ghost" href="#home" style="text-decoration:none"><svg class="i"><use href="#sparkles"/></svg>Tiếp tục không cần tài khoản</a>
-    <p style="text-align:center;font-size:14px" class="muted">Chưa có tài khoản? <a class="link" href="#login" data-toast="Tính năng đăng ký sắp ra mắt.">Đăng ký ngay</a></p>
+    <p style="text-align:center;font-size:14px" class="muted"><span id="swText">Chưa có tài khoản?</span> <a class="link" href="#login" id="swMode">Đăng ký ngay</a></p>
     <p class="note" style="text-align:center">Tài khoản dùng chung với ứng dụng SmartCool AI trên điện thoại.</p>
   </form>
 </section>
@@ -442,9 +456,10 @@ p{margin:0}
     <a class="nav" href="#estimate" data-v="estimate"><svg class="i"><use href="#box"/></svg>Dự toán chi phí</a>
     <a class="nav" href="#home" data-soon><svg class="i"><use href="#wrench"/></svg>Hướng dẫn lắp đặt</a>
     <a class="nav" href="#home" data-soon><svg class="i"><use href="#history"/></svg>Lịch sử</a>
-    <a class="nav" href="#login"><svg class="i"><use href="#logout"/></svg>Đăng xuất</a>
+    <a class="nav" href="#login" id="logoutBtn"><svg class="i"><use href="#logout"/></svg>Đăng xuất</a>
     <div class="promo"><svg class="i"><use href="#shield"/></svg><b>Trợ lý luôn bên bạn</b><p>Khám phá thiết bị, lựa chọn thông minh, vận hành an toàn.</p></div>
-    <div class="me"><div class="av"></div><div><b>Tài khoản khách</b><small>Thành viên SmartCool</small></div></div>
+    <a class="nav" id="adminLink" href="#" target="_blank" rel="noopener" hidden><svg class="i"><use href="#shield"/></svg>Trang quản trị</a>
+    <div class="me"><div class="av"></div><div><b id="meName">Tài khoản khách</b><small id="meRole">Chưa đăng nhập</small></div></div>
   </aside>
 
   <div class="main">
@@ -681,7 +696,63 @@ function route(){let h=location.hash.slice(1)||'login';if(h!=='login'&&!views.in
  scrollTo(0,0);if(h==='assistant')$('#msgs').scrollTop=1e6;}
 addEventListener('hashchange',route);route();
 $('#menuBtn').onclick=()=>$('#sb').classList.toggle('open');
-$('#loginForm').addEventListener('submit',e=>{e.preventDefault();location.hash='home';});
+
+/* ===== Kết nối backend: JWT + Google ===== */
+const qs=new URLSearchParams(location.search);
+const API=(qs.get('api')||window.SMARTCOOL_API||(/^(localhost|127\.|192\.168\.)/.test(location.hostname)&&location.port!=='5000'?'http://localhost:5000':(location.port==='5000'?location.origin:'https://smartcool-ai-api.onrender.com'))).replace(/\/+$/,'').replace(/\/api$/,'');
+const KEY='smartcool_auth';
+const store={get(){try{return JSON.parse(localStorage.getItem(KEY)||sessionStorage.getItem(KEY)||'null');}catch{return null;}},
+ set(v,remember){try{localStorage.removeItem(KEY);sessionStorage.removeItem(KEY);(remember?localStorage:sessionStorage).setItem(KEY,JSON.stringify(v));}catch{}},
+ clear(){try{localStorage.removeItem(KEY);sessionStorage.removeItem(KEY);}catch{}}};
+async function api(path,{method='GET',body,token}={}){
+ const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),70000);
+ try{const r=await fetch(API+'/api'+path,{method,signal:ctl.signal,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));if(!r.ok||j.success===false){const e=new Error(j.message||('Lỗi '+r.status));e.status=r.status;throw e;}return j.data;}
+ catch(e){if(e.name==='AbortError'||e instanceof TypeError)throw new Error('Không kết nối được máy chủ. Server miễn phí trên Render có thể đang khởi động, đợi 30–50 giây rồi thử lại.');throw e;}
+ finally{clearTimeout(to);}}
+const nm=u=>u&&((u.profile&&u.profile.fullName)||u.fullName||u.email);
+const ROLE_VI={ADMIN:'Super Admin',WAREHOUSE:'Quản lý kho / kỹ thuật',SUPPORT:'Chăm sóc khách hàng',TECHNICIAN:'Kỹ thuật viên',USER:'Thành viên SmartCool'};
+function showErr(m,ok){const e=$('#lgErr');e.hidden=!m;e.textContent=m||'';e.classList.toggle('ok',!!ok);}
+function paintMe(){const a=store.get(),u=a&&a.user;
+ $('#meName').textContent=u?nm(u):'Tài khoản khách';
+ $('#meRole').textContent=u?(ROLE_VI[u.role]||u.role):'Chưa đăng nhập';
+ const staff=u&&u.role&&u.role!=='USER';const al=$('#adminLink');al.hidden=!staff;al.href=API+'/admin';}
+function afterLogin(d,isNew){const tokens=d.tokens||d;store.set({user:d.user,accessToken:tokens.accessToken,refreshToken:tokens.refreshToken},$('#rem').checked);
+ paintMe();showErr('');toast((isNew?'Tạo tài khoản thành công. ':'')+'Xin chào '+nm(d.user)+'!');location.hash='home';}
+let mode='login';
+function setMode(m){mode=m;const reg=m==='register';$('#nameField').hidden=!reg;$('#lgTitle').textContent=reg?'Đăng ký':'Đăng nhập';
+ $('#lgSub').textContent=reg?'Tạo tài khoản để lưu lịch sử chẩn đoán, dự toán và thiết bị của bạn.':'Đăng nhập để khám phá các tính năng điện lạnh thông minh.';
+ $('#lgBtnText').textContent=reg?'Tạo tài khoản':'Đăng nhập';$('#swText').textContent=reg?'Đã có tài khoản?':'Chưa có tài khoản?';$('#swMode').textContent=reg?'Đăng nhập':'Đăng ký ngay';
+ $('#pw').autocomplete=reg?'new-password':'current-password';showErr('');}
+$('#swMode').addEventListener('click',e=>{e.preventDefault();setMode(mode==='login'?'register':'login');});
+$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();
+ const email=$('#em').value.trim(),password=$('#pw').value,fullName=$('#fn').value.trim();
+ if(!email||!password)return showErr('Nhập email và mật khẩu.');
+ if(mode==='register'&&fullName.length<2)return showErr('Nhập họ và tên.');
+ const b=$('#lgSubmit');b.disabled=true;showErr('Đang kết nối máy chủ…',true);
+ try{const d=await api(mode==='register'?'/auth/register':'/auth/login',{method:'POST',body:mode==='register'?{fullName,email,password}:{email,password}});afterLogin(d,mode==='register');}
+ catch(err){showErr(err.message);}finally{b.disabled=false;}});
+$('#logoutBtn').addEventListener('click',()=>{const a=store.get();if(a&&a.refreshToken)api('/auth/logout',{method:'POST',body:{refreshToken:a.refreshToken}}).catch(()=>{});store.clear();paintMe();});
+/* Google: nút luôn hiện; server có GOOGLE_CLIENT_ID thì thay bằng nút chính thức của Google */
+let gCfg=null,gLoading=null;
+function loadGsi(){return gLoading||(gLoading=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.async=true;sc.onload=ok;sc.onerror=()=>no(new Error('Không tải được thư viện Google.'));document.head.append(sc);}));}
+async function onGoogle(resp){showErr('Đang đăng nhập bằng Google…',true);
+ try{const d=await api('/auth/google',{method:'POST',body:{idToken:resp.credential}});afterLogin(d,d.isNewUser);}catch(err){showErr(err.message);}}
+async function initGoogle(){
+ try{gCfg=await api('/auth/google/config');}catch{gCfg=null;return;}
+ if(!gCfg||!gCfg.enabled)return;
+ try{await loadGsi();google.accounts.id.initialize({client_id:gCfg.clientId,callback:onGoogle,ux_mode:'popup'});
+  const w=Math.min(400,Math.round($('#loginForm').clientWidth-80))||320;
+  google.accounts.id.renderButton($('#gsiBtn'),{theme:'filled_blue',size:'large',shape:'pill',text:'signin_with',width:w,locale:'vi'});
+  $('#gsiBtn').hidden=false;$('#gBtn').hidden=true;}catch{}}
+$('#gBtn').addEventListener('click',async()=>{const b=$('#gBtn');b.disabled=true;showErr('Đang kiểm tra cấu hình Google trên máy chủ…',true);
+ try{gCfg=await api('/auth/google/config');
+  if(!gCfg.enabled)showErr('Máy chủ chưa bật đăng nhập Google. Cần đặt biến GOOGLE_CLIENT_ID trên Render (xem hướng dẫn mục 5 trong docs/DATABASE_SERVER.md). Trong lúc chờ, bạn đăng nhập bằng email.');
+  else{showErr('');await initGoogle();google.accounts.id.prompt();}}
+ catch(err){showErr(err.message);}finally{b.disabled=false;}});
+paintMe();initGoogle();
+if(store.get()&&location.hash==='')location.hash='home';
+
 
 /* chip / tile groups */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-group] > .chip, [data-group] > .tile');if(!b)return;const g=b.parentElement;
