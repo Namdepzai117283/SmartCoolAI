@@ -12,9 +12,16 @@ import { meRoutes } from './routes/customer.routes';
 import path from 'node:path';
 const app = express();
 app.disable('x-powered-by');
-// CORS_ORIGIN="https://smartcoolai.vercel.app,http://localhost:5173" (bỏ trống = cho phép tất cả)
-const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
-app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : undefined));
+// CORS_ORIGIN="https://smartcoolai.vercel.app,http://localhost:5173" (bỏ trống = cho phép tất cả).
+// Ngoài danh sách đó, luôn cho phép mọi tên miền Vercel bắt đầu bằng "smartcoolai" (smartcoolai1.vercel.app,
+// bản preview...) và localhost, để đổi tên miền Vercel không làm web báo "Không kết nối được máy chủ".
+const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
+const builtInOrigins = [/^https:\/\/smartcoolai[a-z0-9-]*\.vercel\.app$/i, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
+app.use(cors(allowedOrigins.length
+  ? {
+      origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin) || builtInOrigins.some((re) => re.test(origin))),
+    }
+  : undefined));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/', (_req, res) => {
