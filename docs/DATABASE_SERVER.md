@@ -1,0 +1,113 @@
+# Database và Server – hướng dẫn cài đặt
+
+Có 2 cách chạy. Khi demo trên lớp nên chuẩn bị **cả hai**: chạy local làm chính, bản online làm dự phòng.
+
+| | Database | Server (API) | Dùng khi |
+|---|---|---|---|
+| **Local** | PostgreSQL trên máy bạn | `npm run dev` trên máy bạn | Code, demo cùng mạng Wi-Fi |
+| **Online** | Neon (PostgreSQL cloud, miễn phí) | Render (miễn phí) | Điện thoại dùng 4G, gửi link cho thầy |
+
+---
+
+## 1. Database trên máy (chọn A hoặc B)
+
+### A. Cài PostgreSQL cho Windows (không cần Docker)
+
+1. Tải tại https://www.postgresql.org/download/windows/ (bản 16 hoặc 17), cài mặc định, **ghi nhớ mật khẩu user `postgres`**, cổng 5432.
+2. Mở **pgAdmin** (hoặc SQL Shell `psql`) và chạy:
+   ```sql
+   CREATE USER smartcool WITH PASSWORD 'smartcool' CREATEDB;
+   CREATE DATABASE smartcool_ai OWNER smartcool;
+   ```
+   (`CREATEDB` cần cho lệnh `npm run db:migrate`, vì Prisma tạo DB tạm để so sánh.)
+3. Trong `backend/.env`:
+   ```
+   DATABASE_URL="postgresql://smartcool:smartcool@localhost:5432/smartcool_ai?schema=public"
+   ```
+
+### B. Dùng Docker
+
+```bash
+docker compose up -d     # ở thư mục gốc repo, dùng file docker-compose.yml
+```
+`DATABASE_URL` giống hệt mục A.
+
+### Tạo bảng + dữ liệu mẫu
+
+```bash
+cd backend
+npm install
+npm run db:deploy        # tạo 14 bảng từ prisma/migrations
+npm run db:seed          # 2 tài khoản, 10 thương hiệu, 16 sản phẩm, 8 bài viết, lịch sử mẫu
+npm run db:studio        # (tuỳ chọn) xem dữ liệu trên trình duyệt
+```
+
+Hoặc bấm đúp `backend/CHAY-BACKEND.cmd` để làm hết các bước và mở server.
+
+---
+
+## 2. Chạy server trên máy
+
+```bash
+cd backend
+npm run dev              # http://localhost:5000/api/health
+npm run test:api         # mở cửa sổ khác: kiểm tra 54 bước API (đăng ký, JWT, CRUD...)
+```
+
+### Cho điện thoại gọi vào server trên máy
+
+1. Điện thoại và laptop **cùng một mạng Wi-Fi**.
+2. Xem IP laptop: mở CMD gõ `ipconfig` → dòng **IPv4 Address**, ví dụ `192.168.1.15`.
+3. Cho phép cổng 5000 qua tường lửa (CMD chạy quyền Administrator):
+   ```
+   netsh advfirewall firewall add rule name="SmartCool API" dir=in action=allow protocol=TCP localport=5000
+   ```
+4. Trên điện thoại mở trình duyệt vào `http://192.168.1.15:5000/api/health` để thử.
+5. App Expo dùng `EXPO_PUBLIC_API_URL=http://192.168.1.15:5000/api` (file `mobile/.env`).
+
+Server đã lắng nghe `0.0.0.0` nên máy khác trong mạng gọi được.
+
+---
+
+## 3. Database online với Neon
+
+1. Vào https://neon.tech → đăng nhập bằng GitHub → **Create project** (region Singapore cho nhanh).
+2. Bấm **Connect**, copy **connection string** dạng
+   `postgresql://neondb_owner:xxxx@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+3. Tạo bảng và seed lên Neon từ máy bạn (tạm thay `DATABASE_URL` trong `backend/.env` bằng chuỗi Neon):
+   ```bash
+   npm run db:deploy
+   npm run db:seed
+   ```
+   Xong thì đổi `.env` về local nếu muốn.
+
+## 4. Server online với Render
+
+1. Vào https://render.com → đăng nhập bằng GitHub (tài khoản có repo SmartCoolAI).
+2. **New → Blueprint** → chọn repo → Render đọc file `render.yaml` ở gốc repo.
+3. Ở bước hỏi biến môi trường, dán **DATABASE_URL** của Neon. `JWT_ACCESS_SECRET` Render tự sinh.
+4. Đợi build xong (lệnh build đã gồm `prisma migrate deploy`), mở
+   `https://smartcool-ai-api.onrender.com/api/health`.
+
+Nếu muốn tạo tay (không dùng Blueprint): **New → Web Service**, Root Directory `backend`,
+Build `npm ci --include=dev && npm run build && npx prisma migrate deploy`, Start `npm start`, rồi thêm các biến như trong `.env.example`.
+
+> Gói Free của Render **ngủ sau 15 phút** không ai gọi; lần gọi đầu mất khoảng 30–50 giây để thức dậy.
+> Trước giờ bảo vệ 5 phút hãy mở `/api/health` một lần.
+
+Sau khi có URL Render:
+- App điện thoại: `EXPO_PUBLIC_API_URL=https://smartcool-ai-api.onrender.com/api`
+- Web Vercel: thêm biến `VITE_API_URL` tương tự, và giữ `CORS_ORIGIN=https://smartcoolai.vercel.app` trên Render.
+
+---
+
+## 5. Lỗi hay gặp
+
+| Lỗi | Cách sửa |
+|---|---|
+| `Không tìm thấy DATABASE_URL` | Chưa có `backend/.env` → copy từ `.env.example` |
+| `JWT_ACCESS_SECRET phải có ít nhất 64 ký tự` | Tạo chuỗi bằng `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `P1001 Can't reach database server` | PostgreSQL chưa chạy (Services → postgresql-x64-16 → Start) hoặc sai cổng |
+| `password authentication failed` | Sai user/mật khẩu trong `DATABASE_URL` |
+| `Cannot find module '../generated/prisma/client'` | Chạy `npx prisma generate` |
+| Điện thoại báo không kết nối được | Sai IP, khác Wi-Fi, hoặc tường lửa chặn cổng 5000 |
