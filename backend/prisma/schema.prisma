@@ -1,0 +1,469 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENUM - CAC KIEU DU LIEU CO DINH
+// ==========================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum DeviceType {
+  AIR_CONDITIONER
+  REFRIGERATOR
+  FREEZER
+}
+
+enum ServiceType {
+  INSTALLATION
+  MAINTENANCE
+  REPAIR
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  DANGER
+}
+
+enum ArticleCategory {
+  AIR_CONDITIONER
+  REFRIGERATOR
+  FREEZER
+  MAINTENANCE
+  SAFETY
+  ENERGY_SAVING
+  USAGE_GUIDE
+}
+
+enum AttachmentType {
+  IMAGE
+  DOCUMENT
+}
+
+// ==========================================
+// 01. TAI KHOAN NGUOI DUNG
+// ==========================================
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash")
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  lastLogin DateTime? @map("last_login")
+
+  profile       UserProfile?
+  refreshTokens RefreshToken[]
+  conversations Conversation[]
+  comparisons   Comparison[]
+  costEstimates CostEstimate[]
+  diagnoses     Diagnosis[]
+  favorites     ArticleFavorite[]
+  guideProgress GuideProgress[]
+
+  @@index([status])
+  @@map("users")
+}
+
+// ==========================================
+// 02. THONG TIN CA NHAN
+// ==========================================
+
+model UserProfile {
+  id        String  @id @default(uuid()) @db.Uuid
+  userId    String  @unique @map("user_id") @db.Uuid
+  fullName  String  @map("full_name") @db.VarChar(150)
+  phone     String? @db.VarChar(20)
+  address   String?
+  avatarUrl String? @map("avatar_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// ==========================================
+// 03. QUAN LY PHIEN DANG NHAP
+// ==========================================
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  deviceName String?   @map("device_name")
+  userAgent  String?   @map("user_agent")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ==========================================
+// 04. CUOC TRO CHUYEN VOI AI
+// ==========================================
+
+model Conversation {
+  id       String  @id @default(uuid()) @db.Uuid
+  userId   String  @map("user_id") @db.Uuid
+  title    String  @default("Cuá»™c trÃ² chuyá»‡n má»›i")
+  context  Json?
+  archived Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  messages      Message[]
+  comparisons   Comparison[]
+  costEstimates CostEstimate[]
+  diagnoses     Diagnosis[]
+
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+// ==========================================
+// 05. TIN NHAN AI
+// ==========================================
+
+model Message {
+  id             String      @id @default(uuid()) @db.Uuid
+  conversationId String      @map("conversation_id") @db.Uuid
+  role           MessageRole
+  content        String      @db.Text
+  intent         String?
+  actions        Json?
+  metadata       Json?
+  isDemo         Boolean     @default(false) @map("is_demo")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  attachments MessageAttachment[]
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// ==========================================
+// 06. HINH ANH VA FILE DINH KEM
+// ==========================================
+
+model MessageAttachment {
+  id        String         @id @default(uuid()) @db.Uuid
+  messageId String         @map("message_id") @db.Uuid
+  type      AttachmentType @default(IMAGE)
+
+  fileName String? @map("file_name")
+  fileUrl  String  @map("file_url")
+  mimeType String? @map("mime_type")
+  fileSize Int?    @map("file_size")
+  width    Int?
+  height   Int?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_attachments")
+}
+
+// ==========================================
+// 07. THUONG HIEU DIEN LANH
+// ==========================================
+
+model Brand {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  slug        String  @unique @db.VarChar(100)
+  country     String?
+  logoUrl     String? @map("logo_url")
+  description String? @db.Text
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@map("brands")
+}
+
+// ==========================================
+// 08. SAN PHAM DIEN LANH
+// ==========================================
+
+model Product {
+  id         String     @id @default(uuid()) @db.Uuid
+  brandId    String     @map("brand_id") @db.Uuid
+  name       String     @db.VarChar(255)
+  model      String     @db.VarChar(150)
+  deviceType DeviceType @map("device_type")
+
+  price       Decimal @db.Decimal(15, 0)
+  capacity    String
+  inverter    Boolean @default(false)
+  description String? @db.Text
+  imageUrl    String? @map("image_url")
+
+  coolingCapacity  Int?    @map("cooling_capacity")
+  powerConsumption Float?  @map("power_consumption")
+  energyRating     String? @map("energy_rating")
+  warrantyMonths   Int?    @map("warranty_months")
+  origin           String?
+  suitableRoomArea String? @map("suitable_room_area")
+
+  features      String[] @default([])
+  advantages    String[] @default([])
+  disadvantages String[] @default([])
+
+  installationCost Decimal? @map("installation_cost") @db.Decimal(15, 0)
+
+  isActive Boolean @default(true) @map("is_active")
+  isDemo   Boolean @default(true) @map("is_demo")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+
+  firstComparisons  Comparison[]   @relation("FirstProduct")
+  secondComparisons Comparison[]   @relation("SecondProduct")
+  costEstimates     CostEstimate[]
+
+  @@unique([brandId, model])
+  @@index([deviceType, price])
+  @@index([brandId])
+  @@map("products")
+}
+
+// ==========================================
+// 09. LICH SU SO SANH THIET BI
+// ==========================================
+
+model Comparison {
+  id              String  @id @default(uuid()) @db.Uuid
+  userId          String  @map("user_id") @db.Uuid
+  conversationId  String? @map("conversation_id") @db.Uuid
+  firstProductId  String  @map("first_product_id") @db.Uuid
+  secondProductId String  @map("second_product_id") @db.Uuid
+
+  title      String?
+  userNeeds  Json?   @map("user_needs")
+  criteria   Json?
+  result     Json?
+  conclusion String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  firstProduct Product @relation("FirstProduct", fields: [firstProductId], references: [id], onDelete: Restrict)
+
+  secondProduct Product @relation("SecondProduct", fields: [secondProductId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("comparisons")
+}
+
+// ==========================================
+// 10. DU TOAN CHI PHI
+// ==========================================
+
+model CostEstimate {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         String  @map("user_id") @db.Uuid
+  conversationId String? @map("conversation_id") @db.Uuid
+  productId      String? @map("product_id") @db.Uuid
+
+  deviceType  DeviceType  @map("device_type")
+  serviceType ServiceType @map("service_type")
+
+  productName String? @map("product_name")
+  quantity    Int     @default(1)
+
+  unitPrice    Decimal @default(0) @map("unit_price") @db.Decimal(15, 0)
+  materialCost Decimal @default(0) @map("material_cost") @db.Decimal(15, 0)
+  laborCost    Decimal @default(0) @map("labor_cost") @db.Decimal(15, 0)
+  extraCost    Decimal @default(0) @map("extra_cost") @db.Decimal(15, 0)
+
+  reservePercent Decimal @default(0) @map("reserve_percent") @db.Decimal(5, 2)
+  reserveCost    Decimal @default(0) @map("reserve_cost") @db.Decimal(15, 0)
+
+  subtotal  Decimal  @default(0) @db.Decimal(15, 0)
+  totalCost Decimal  @default(0) @map("total_cost") @db.Decimal(15, 0)
+  budget    Decimal? @db.Decimal(15, 0)
+
+  note        String?  @db.Text
+  assumptions String[] @default([])
+  items       Json?
+  isDemo      Boolean  @default(true) @map("is_demo")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("cost_estimates")
+}
+
+// ==========================================
+// 11. CHAN DOAN SU CO DIEN LANH
+// ==========================================
+
+model Diagnosis {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         String  @map("user_id") @db.Uuid
+  conversationId String? @map("conversation_id") @db.Uuid
+
+  deviceType  DeviceType @map("device_type")
+  brand       String?
+  model       String?
+  errorCode   String?    @map("error_code")
+  description String?    @db.Text
+  symptoms    String[]   @default([])
+
+  possibleCauses     String[]  @default([]) @map("possible_causes")
+  recommendedActions String[]  @default([]) @map("recommended_actions")
+  safetyWarnings     String[]  @default([]) @map("safety_warnings")
+  riskLevel          RiskLevel @default(MEDIUM) @map("risk_level")
+
+  requiresTechnician Boolean @default(true) @map("requires_technician")
+
+  estimatedMinCost Decimal? @map("estimated_min_cost") @db.Decimal(15, 0)
+  estimatedMaxCost Decimal? @map("estimated_max_cost") @db.Decimal(15, 0)
+
+  imageUrls String[] @default([]) @map("image_urls")
+  isDemo    Boolean  @default(true) @map("is_demo")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("diagnoses")
+}
+
+// ==========================================
+// 12. THU VIEN KIEN THUC
+// ==========================================
+
+model KnowledgeArticle {
+  id          String          @id @default(uuid()) @db.Uuid
+  title       String          @db.VarChar(255)
+  slug        String          @unique @db.VarChar(255)
+  category    ArticleCategory
+  summary     String?         @db.Text
+  content     String          @db.Text
+  imageUrl    String?         @map("image_url")
+  readingTime Int             @default(5) @map("reading_time")
+
+  tags  String[] @default([])
+  steps Json?
+
+  isGuide     Boolean @default(false) @map("is_guide")
+  isPublished Boolean @default(false) @map("is_published")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  favorites ArticleFavorite[]
+  progress  GuideProgress[]
+
+  @@index([category, isPublished])
+  @@map("knowledge_articles")
+}
+
+// ==========================================
+// 13. BAI VIET YEU THICH
+// ==========================================
+
+model ArticleFavorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  articleId String   @map("article_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@map("article_favorites")
+}
+
+// ==========================================
+// 14. TIEN DO THUC HIEN HUONG DAN
+// ==========================================
+
+model GuideProgress {
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+  articleId String @map("article_id") @db.Uuid
+
+  completedSteps String[]  @default([]) @map("completed_steps")
+  totalSteps     Int       @default(0) @map("total_steps")
+  progress       Int       @default(0)
+  isCompleted    Boolean   @default(false) @map("is_completed")
+  completedAt    DateTime? @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@index([articleId])
+  @@map("guide_progress")
+}
