@@ -114,7 +114,7 @@ Server chỉ cần **Client ID** (không cần Client Secret, vì server tự ki
    - **Authorized JavaScript origins** thêm 2 dòng:
      - `http://localhost:5000`
      - `https://smartcool-ai-api.onrender.com`
-     - `https://smartcoolai.vercel.app` (trang web chính)
+     - `https://smartcoolai.vercel.app` và `https://smartcoolai1.vercel.app` (trang web chính)
    - (không cần Redirect URI) → Create.
 4. Copy chuỗi **Client ID** (dạng `1234…-abc.apps.googleusercontent.com`) rồi dán vào:
    - Máy: `backend/.env` → `GOOGLE_CLIENT_ID=...` rồi chạy lại server.
