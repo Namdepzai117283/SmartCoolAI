@@ -582,7 +582,7 @@ p{margin:0}
     <div class="row"><button class="btn" id="cmpRun" disabled><svg class="i"><use href="#sliders"/></svg>So sánh ngay</button><p class="note">Chọn hai thiết bị khác nhau để so sánh.</p></div>
     <div class="result" id="cmpRes"><div class="tbl"><table class="spec" id="spec"></table></div></div>
   </div>
-  <p class="note">Giá và thông số mang tính tham khảo. Kiểm tra model và giá thực tế trước khi mua.</p>
+  <p class="note" id="cmpNote">Giá và thông số mang tính tham khảo. Kiểm tra model và giá thực tế trước khi mua.</p>
 </section>
 
 <!-- ============ ESTIMATE ============ -->
@@ -596,6 +596,7 @@ p{margin:0}
       </div>
       <div class="glass card" style="display:flex;flex-direction:column;gap:18px">
         <div class="sec-t" style="margin:0"><span class="num">3</span>Thông tin thiết bị</div>
+        <div class="field"><label for="esProd">Chọn sản phẩm của cửa hàng</label><div class="inp"><select id="esProd" aria-label="Chọn sản phẩm"><option value="">Tự nhập thông tin</option></select><svg class="i" style="width:18px"><use href="#chev"/></svg></div></div>
         <div class="field"><label for="esName">Tên thiết bị / Model</label><div class="inp"><input id="esName" value="LG Dual Inverter 1.5 HP" placeholder="VD: LG Dual Inverter 1.5 HP"></div></div>
         <div class="f2">
           <div class="field"><label for="esQty">Số lượng</label><div class="inp"><input id="esQty" type="number" min="1" value="1" inputmode="numeric"></div></div>
@@ -710,6 +711,12 @@ async function api(path,{method='GET',body,token}={}){
   const j=await r.json().catch(()=>({}));if(!r.ok||j.success===false){const e=new Error(j.message||('Lỗi '+r.status));e.status=r.status;throw e;}return j.data;}
  catch(e){if(e.name==='AbortError'||e instanceof TypeError)throw new Error('Không kết nối được máy chủ. Server miễn phí trên Render có thể đang khởi động, đợi 30–50 giây rồi thử lại.');throw e;}
  finally{clearTimeout(to);}}
+async function authApi(path,opt={}){const a=store.get();if(!a||!a.accessToken)throw new Error('Bạn cần đăng nhập.');
+ try{return await api(path,{...opt,token:a.accessToken});}
+ catch(e){if(e.status!==401||!a.refreshToken)throw e;
+  const d=await api('/auth/refresh',{method:'POST',body:{refreshToken:a.refreshToken}});const t=d.tokens||d;
+  const remember=!!localStorage.getItem(KEY);store.set({...a,accessToken:t.accessToken,refreshToken:t.refreshToken||a.refreshToken},remember);
+  return api(path,{...opt,token:t.accessToken});}}
 const nm=u=>u&&((u.profile&&u.profile.fullName)||u.fullName||u.email);
 const ROLE_VI={ADMIN:'Super Admin',WAREHOUSE:'Quản lý kho / kỹ thuật',SUPPORT:'Chăm sóc khách hàng',TECHNICIAN:'Kỹ thuật viên',USER:'Thành viên SmartCool'};
 function showErr(m,ok){const e=$('#lgErr');e.hidden=!m;e.textContent=m||'';e.classList.toggle('ok',!!ok);}
@@ -798,20 +805,31 @@ const syms=$('[data-group="sym"]');syms.addEventListener('pick',()=>{const n=sym
 $('[data-group="brand"]').addEventListener('pick',e=>{$('#dxBrand').value=e.detail.textContent;$$('#dxSteps .st')[0].classList.replace('on','done');$$('#dxSteps .st')[1].classList.add('on');});
 $('#dxRun').onclick=()=>{const r=$('#dxRes');r.classList.remove('show');void r.offsetWidth;r.querySelectorAll('.bar i').forEach(i=>i.style.width='0');r.classList.add('show');$$('#dxSteps .st').forEach(s=>{s.classList.remove('on');s.classList.add('done');});setTimeout(()=>r.querySelectorAll('.bar i').forEach(i=>i.style.width=i.dataset.w+'%'),60);};
 
-/* compare (sample data) */
-const DB={ac:[['Daikin FTKB35XVMV 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter','Điện năng/năm':'≈ 690 kWh','Độ ồn dàn lạnh':'21 dB','Gas':'R32','Giá tham khảo':'≈ 11,9 triệu'}],['LG V13WIN 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Dual Inverter','Điện năng/năm':'≈ 640 kWh','Độ ồn dàn lạnh':'19 dB','Gas':'R32','Giá tham khảo':'≈ 10,5 triệu'}],['Panasonic CU/CS-XU12 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter, Nanoe X','Điện năng/năm':'≈ 610 kWh','Độ ồn dàn lạnh':'20 dB','Gas':'R32','Giá tham khảo':'≈ 16,8 triệu'}]],
+/* compare: sản phẩm thật từ database (Admin quản lý giá). Mất mạng thì dùng dữ liệu mẫu */
+const SAMPLE={ac:[['Daikin FTKB35XVMV 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter','Điện năng/năm':'≈ 690 kWh','Độ ồn dàn lạnh':'21 dB','Gas':'R32','Giá tham khảo':'≈ 11,9 triệu'}],['LG V13WIN 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Dual Inverter','Điện năng/năm':'≈ 640 kWh','Độ ồn dàn lạnh':'19 dB','Gas':'R32','Giá tham khảo':'≈ 10,5 triệu'}],['Panasonic CU/CS-XU12 1.5HP',{'Công suất':'12.000 BTU','Công nghệ':'Inverter, Nanoe X','Điện năng/năm':'≈ 610 kWh','Độ ồn dàn lạnh':'20 dB','Gas':'R32','Giá tham khảo':'≈ 16,8 triệu'}]],
  fr:[['Samsung RT38 380L',{'Dung tích':'380 L','Công nghệ':'Digital Inverter','Điện năng/năm':'≈ 310 kWh','Độ ồn':'38 dB','Gas':'R600a','Giá tham khảo':'≈ 11,2 triệu'}],['Panasonic NR-BX410 410L',{'Dung tích':'410 L','Công nghệ':'Inverter, Prime Fresh','Điện năng/năm':'≈ 295 kWh','Độ ồn':'36 dB','Gas':'R600a','Giá tham khảo':'≈ 14,9 triệu'}]],
  fz:[['Sanaky VH-4099A 400L',{'Dung tích':'400 L','Công nghệ':'Thường','Điện năng/năm':'≈ 520 kWh','Độ ồn':'42 dB','Gas':'R600a','Giá tham khảo':'≈ 7,6 triệu'}],['Hòa Phát HCF 516 350L',{'Dung tích':'350 L','Công nghệ':'Inverter','Điện năng/năm':'≈ 410 kWh','Độ ồn':'40 dB','Gas':'R600a','Giá tham khảo':'≈ 8,9 triệu'}]]};
 let cmpK='ac';
-function fill(){const o='<option value="">Chọn thiết bị</option>'+DB[cmpK].map((d,i)=>`<option value="${i}">${d[0]}</option>`).join('');$('#devA').innerHTML=o;$('#devB').innerHTML=o;$('#cmpRes').classList.remove('show');chk();}
+const DB={ac:SAMPLE.ac,fr:SAMPLE.fr,fz:SAMPLE.fz},TYPE_K={ac:'AIR_CONDITIONER',fr:'REFRIGERATOR',fz:'FREEZER'},prodCache={};
+const vnd=n=>Number(n).toLocaleString('vi-VN')+' ₫';
+async function loadProducts(k){if(!prodCache[k])prodCache[k]=api('/products?limit=100&sort=price_asc&deviceType='+TYPE_K[k]).then(r=>r.items).catch(e=>{delete prodCache[k];throw e;});return prodCache[k];}
+function toRow(p){const cap=p.deviceType==='AIR_CONDITIONER'?'Công suất':'Dung tích';
+ const s={'Hãng':p.brand.name,[cap]:p.capacity+(p.coolingCapacity?` (${p.coolingCapacity.toLocaleString('vi-VN')} BTU)`:''),'Công nghệ':p.inverter?'Inverter':'Thường','Điện năng':p.powerConsumption!=null?p.powerConsumption+' kW':'—','Nhãn năng lượng':p.energyRating||'—','Bảo hành':p.warrantyMonths?p.warrantyMonths+' tháng':'—','Xuất xứ':p.origin||'—','Giá bán':vnd(p.price),'Phí lắp đặt':p.installationCost!=null?vnd(p.installationCost):'—'};
+ return [p.name,s,{'Điện năng':p.powerConsumption,'Bảo hành':p.warrantyMonths,'Giá bán':p.price,'Phí lắp đặt':p.installationCost},p.id];}
+function fillOpts(){const o='<option value="">Chọn thiết bị</option>'+DB[cmpK].map((d,i)=>`<option value="${i}">${d[0]}${d[2]?' – '+vnd(d[2]['Giá bán']):''}</option>`).join('');$('#devA').innerHTML=o;$('#devB').innerHTML=o;$('#cmpRes').classList.remove('show');chk();}
+async function fill(){fillOpts();const k=cmpK;
+ try{const items=await loadProducts(k);if(k!==cmpK)return;if(items.length){DB[k]=items.map(toRow);fillOpts();$('#cmpNote').textContent='Giá và thông số lấy trực tiếp từ cửa hàng SmartCool ('+items.length+' sản phẩm), cập nhật bởi trang quản trị.';}
+  else $('#cmpNote').textContent='Cửa hàng chưa có sản phẩm loại này, đang hiển thị dữ liệu tham khảo.';}
+ catch{$('#cmpNote').textContent='Chưa kết nối được máy chủ, đang hiển thị giá tham khảo.';}}
 function chk(){const a=$('#devA').value,b=$('#devB').value;$('#cmpRun').disabled=!(a!==''&&b!==''&&a!==b);}
 $('[data-group="cmpType"]').addEventListener('pick',e=>{cmpK=e.detail.dataset.k;fill();});
 $('#devA').onchange=$('#devB').onchange=chk;fill();
 const num=s=>parseFloat(String(s).replace(/[^\d,]/g,'').replace(',','.'))||0;
-const better={'Điện năng/năm':'low','Độ ồn dàn lạnh':'low','Độ ồn':'low','Giá tham khảo':'low','Dung tích':'high'};
+const better={'Điện năng/năm':'low','Độ ồn dàn lạnh':'low','Độ ồn':'low','Giá tham khảo':'low','Dung tích':'high','Điện năng':'low','Giá bán':'low','Phí lắp đặt':'low','Bảo hành':'high'};
 $('#cmpRun').onclick=()=>{const A=DB[cmpK][$('#devA').value],B=DB[cmpK][$('#devB').value];let h=`<tr><th></th><td><b>${A[0]}</b></td><td><b>${B[0]}</b></td></tr>`;
- for(const k in A[1]){let ca='',cb='';if(better[k]){const x=num(A[1][k]),y=num(B[1][k]);if(x!==y){const aw=better[k]==='low'?x<y:x>y;ca=aw?'win':'';cb=aw?'':'win';}}h+=`<tr><th>${k}</th><td class="${ca}">${A[1][k]}</td><td class="${cb}">${B[1][k]}</td></tr>`;}
- $('#spec').innerHTML=h;const r=$('#cmpRes');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');};
+ for(const k in A[1]){let ca='',cb='';const ra=A[2]&&A[2][k],rb=B[2]&&B[2][k];if(better[k]&&(!A[2]||(ra!=null&&rb!=null))){const x=A[2]?ra:num(A[1][k]),y=B[2]?rb:num(B[1][k]);if(x!==y){const aw=better[k]==='low'?x<y:x>y;ca=aw?'win':'';cb=aw?'':'win';}}h+=`<tr><th>${k}</th><td class="${ca}">${A[1][k]}</td><td class="${cb}">${B[1][k]}</td></tr>`;}
+ $('#spec').innerHTML=h;const r=$('#cmpRes');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');
+ if(A[3]&&B[3]&&store.get())authApi('/comparisons',{method:'POST',body:{firstProductId:A[3],secondProductId:B[3]}}).catch(()=>{});};
 
 /* estimate */
 const ids=['esQty','esPrice','esMat','esLab','esExt','esRes'];
@@ -823,9 +841,25 @@ function calc(){const v=Object.fromEntries(ids.map(i=>[i,Math.max(0,+$('#'+i).va
 ids.forEach(i=>$('#'+i).addEventListener('input',calc));
 $('[data-group="esJob"]').addEventListener('pick',e=>{$('#esLab').value=e.detail.dataset.l;$('#esMat').value=e.detail.dataset.m;if(e.detail.textContent!=='Mua và lắp đặt'){$('#esPrice').value=0;}else if(+$('#esPrice').value===0){$('#esPrice').value=12490000;}calc();});
 calc();
-$('#esSave').onclick=()=>{shown++;$('#histN').textContent=shown;toast('Đã lưu dự toán "'+($('#esName').value||'Không tên')+'".');};
+const ES_TYPES=['ac','fr','fz'],ES_JOB={'Mua và lắp đặt':'INSTALLATION','Bảo dưỡng':'MAINTENANCE','Sửa chữa':'REPAIR'};
+const esK=()=>ES_TYPES[Math.max(0,[...$('[data-group="esType"]').children].findIndex(c=>c.getAttribute('aria-pressed')==='true'))];
+const esJob=()=>{const b=$('[data-group="esJob"] [aria-pressed="true"]');return ES_JOB[b?b.textContent.trim():'Mua và lắp đặt']||'INSTALLATION';};
+let esItems=[];
+async function fillEsProd(){const k=esK();$('#esProd').innerHTML='<option value="">Tự nhập thông tin</option>';esItems=[];
+ try{const items=await loadProducts(k);if(k!==esK())return;esItems=items;$('#esProd').innerHTML='<option value="">Tự nhập thông tin</option>'+items.map((p,i)=>`<option value="${i}">${p.name} – ${vnd(p.price)}</option>`).join('');}catch{}}
+$('#esProd').onchange=()=>{const p=esItems[$('#esProd').value];if(!p)return;$('#esName').value=p.name;
+ if(esJob()==='INSTALLATION'){$('#esPrice').value=p.price;if(p.installationCost!=null)$('#esLab').value=p.installationCost;}calc();};
+$('[data-group="esType"]').addEventListener('pick',fillEsProd);fillEsProd();
+async function refreshHist(){if(!store.get())return;try{const r=await authApi('/estimates?limit=1');shown=(r.pagination&&r.pagination.total)||0;$('#histN').textContent=shown;}catch{}}
+$('#esSave').onclick=async()=>{const name=$('#esName').value||'Không tên';
+ if(!store.get()){shown++;$('#histN').textContent=shown;return toast('Đã lưu tạm "'+name+'". Đăng nhập để lưu vào tài khoản.');}
+ const p=esItems[$('#esProd').value],v=i=>Math.max(0,Math.round(+$('#'+i).value||0));
+ try{await authApi('/estimates',{method:'POST',body:{deviceType:TYPE_K[esK()],serviceType:esJob(),productId:p&&p.name===$('#esName').value?p.id:null,productName:name,quantity:Math.max(1,v('esQty')),unitPrice:v('esPrice'),materialCost:v('esMat'),laborCost:v('esLab'),extraCost:v('esExt'),reservePercent:Math.min(30,v('esRes'))}});
+  toast('Đã lưu dự toán "'+name+'" vào tài khoản.');refreshHist();}
+ catch(e){toast('Không lưu được: '+e.message);}};
 $('#esNew').onclick=()=>{$('#esName').value='';$('#esQty').value=1;$('#esPrice').value=0;$('#esMat').value=0;$('#esLab').value=0;$('#esExt').value=0;$('#esRes').value=5;calc();toast('Đã tạo dự toán mới.');};
-$('#histBtn').onclick=()=>toast(shown?`Bạn có ${shown} dự toán đã lưu trong phiên này.`:'Chưa có dự toán nào được lưu.');
+$('#histBtn').onclick=()=>toast(shown?`Bạn có ${shown} dự toán đã lưu${store.get()?' trong tài khoản':' trong phiên này'}.`:'Chưa có dự toán nào được lưu.');
+refreshHist();
 
 /* camera */
 $('#camTxt').addEventListener('input',e=>$('#camN').textContent=e.target.value.length);

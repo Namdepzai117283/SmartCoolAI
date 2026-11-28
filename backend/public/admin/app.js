@@ -146,7 +146,8 @@ const PAGES = [
   { id: 'tickets', label: 'Phiếu dịch vụ', icon: 'ticket', perm: 'tickets:read', sub: 'Tiếp nhận, điều phối, lịch sử sửa chữa' },
   { id: 'maintenance', label: 'Bảo trì định kỳ', icon: 'cal', perm: 'tickets:read', sub: 'Chu kỳ bảo dưỡng và nhắc khách hàng' },
   { group: 'Danh mục' },
-  { id: 'catalog', label: 'Model & mã lỗi', icon: 'box', perm: 'devices:read', sub: 'Sản phẩm, thông số, bảng mã lỗi và cách khắc phục' },
+  { id: 'products', label: 'Sản phẩm & giá', icon: 'box', perm: 'dashboard:read', sub: 'Thông tin sản phẩm, giá bán, phí lắp đặt – web chính lấy dữ liệu từ đây' },
+  { id: 'catalog', label: 'Bảng mã lỗi', icon: 'alert', perm: 'devices:read', sub: 'Mã lỗi theo hãng, nguyên nhân và cách khắc phục' },
   { id: 'firmware', label: 'Firmware / OTA', icon: 'chip', perm: 'devices:read', sub: 'Phát hành và đẩy cập nhật phần mềm' },
   { group: 'Con người' },
   { id: 'users', label: 'Người dùng & phân quyền', icon: 'users', perm: 'users:read', sub: 'Khách hàng, nhân viên, vai trò RBAC' },
@@ -284,7 +285,31 @@ VIEWS.dashboard = async () => {
   const data = await api('/admin/dashboard');
   const k = data.kpi;
   const kpi = (label, value, sub, ic, color) => `<div class="glass kpi" style="--c:${color}"><span class="label">${icon(ic)}${label}</span><span class="value">${value}</span><span class="sub">${sub}</span></div>`;
+  const b = data.business;
+  const vnd = (v) => (v >= 1e6 ? (Math.round(v / 1e5) / 10).toLocaleString('vi-VN') + ' tr' : money(v));
   $('#view').innerHTML = `
+    <div class="sec-title">${icon('users')}Kinh doanh & người dùng <span class="badge b-ok">dữ liệu thật</span></div>
+    <div class="kpis">
+      ${kpi('Khách hàng đăng ký', b.accounts, `+${b.newUsers7d} trong 7 ngày`, 'users', C.ice)}
+      ${kpi('Đăng nhập hôm nay', b.loginsToday, 'tài khoản đã đăng nhập', 'user', C.ok)}
+      ${kpi('Sản phẩm đang bán', b.activeProducts, `${b.hiddenProducts} sản phẩm đang ẩn`, 'box', C.violet)}
+      ${kpi('Giá bán trung bình', vnd(b.avgPrice), `${vnd(b.minPrice)} – ${vnd(b.maxPrice)}`, 'wallet', C.warn)}
+      ${kpi('Dự toán · So sánh', `${b.estimates} · ${b.comparisons}`, `${b.diagnoses} chẩn đoán · ${b.conversations} hội thoại AI`, 'activity', C.blue)}
+    </div>
+    <div class="charts">
+      <div class="glass card span-8"><h3>${icon('users')}Đăng ký mới & đăng nhập 14 ngày</h3><div class="chart-box"><canvas id="cUsers"></canvas></div></div>
+      <div class="glass card span-4"><div class="card-head"><h3>${icon('user')}Khách hàng mới nhất</h3><span class="spacer"></span><button class="btn sm" id="seeUsers">Xem tất cả</button></div>
+        <div class="mini-list">${b.recentUsers.length ? b.recentUsers.map((u) => `<div class="mini-row"><div><b>${esc(u.profile?.fullName || u.email)}</b><div class="small muted">${esc(u.email)}${u.authProvider === 'GOOGLE' ? ' · Google' : ''}</div></div><span class="small dim">${ago(u.createdAt)}</span></div>`).join('') : '<div class="empty">Chưa có khách hàng</div>'}</div></div>
+      <div class="glass card span-12"><div class="card-head"><h3>${icon('wallet')}Giá bán theo loại sản phẩm</h3><span class="spacer"></span><button class="btn sm" id="seeProducts">Quản lý sản phẩm</button></div>
+        ${tableHTML([
+          { label: 'Loại', render: (r) => `<b>${esc(L.deviceType[r.deviceType])}</b>` },
+          { label: 'Số sản phẩm', num: true, render: (r) => r.count },
+          { label: 'Rẻ nhất', num: true, render: (r) => money(r.min) },
+          { label: 'Trung bình', num: true, render: (r) => `<b>${money(r.avg)}</b>` },
+          { label: 'Đắt nhất', num: true, render: (r) => money(r.max) },
+        ], b.priceByType, { empty: 'Chưa có sản phẩm nào đang bán' })}</div>
+    </div>
+    <div class="sec-title">${icon('thermo')}Thiết bị IoT & dịch vụ</div>
     <div class="kpis">
       ${kpi('Thiết bị đang hoạt động', k.online, `/${k.totalDevices} thiết bị`, 'zap', C.ok)}
       ${kpi('Ngoại tuyến (offline)', k.offline, 'không gửi dữ liệu', 'info', C.muted)}
@@ -295,7 +320,7 @@ VIEWS.dashboard = async () => {
     <div class="charts">
       <div class="glass card span-8"><h3>${icon('alert')}Xu hướng báo lỗi 14 ngày</h3><div class="chart-box"><canvas id="cErr"></canvas></div></div>
       <div class="glass card span-4"><h3>${icon('box')}Theo dòng máy</h3><div class="chart-box"><canvas id="cType"></canvas></div></div>
-      <div class="glass card span-6"><h3>${icon('zap')}Điện năng tiêu thụ (kWh/ngày, mẫu đo)</h3><div class="chart-box"><canvas id="cEnergy"></canvas></div></div>
+      <div class="glass card span-6"><h3>${icon('zap')}Điện năng tiêu thụ (kWh/ngày)</h3><div class="chart-box"><canvas id="cEnergy"></canvas></div></div>
       <div class="glass card span-6"><h3>${icon('wrench')}Tần suất dịch vụ 6 tháng</h3><div class="chart-box"><canvas id="cTickets"></canvas></div></div>
       <div class="glass card span-5" style="align-self:start"><h3>${icon('home')}Phân bổ theo khu vực</h3><div class="chart-box"><canvas id="cRegion"></canvas></div></div>
       <div class="glass card span-7"><div class="card-head"><h3>${icon('shield')}Cảnh báo khẩn cấp</h3><span class="spacer"></span><span class="muted small">${data.urgentAlerts.length} thiết bị</span></div>
@@ -307,8 +332,14 @@ VIEWS.dashboard = async () => {
             <div class="pill-row">${badge(a.severity, L.severity)}<button class="btn sm" data-dev="${i}">Xem</button></div>
           </div>`).join('') : '<div class="empty">Không có thiết bị nào đang lỗi 🎉</div>'}</div></div>
     </div>`;
+  $('#seeUsers').onclick = () => go('users');
+  $('#seeProducts').onclick = () => go('products');
   $('#alerts').onclick = (e) => { const b = e.target.closest('[data-dev]'); if (b) showDevice(data.urgentAlerts[b.dataset.dev].deviceId); };
   const c = data.charts;
+  chart($('#cUsers'), { type: 'bar', data: { labels: b.usersByDay.map((x) => x.day.slice(5)), datasets: [
+    { label: 'Đăng ký mới', data: b.usersByDay.map((x) => x.signups), backgroundColor: C.ice, borderRadius: 6 },
+    { label: 'Đăng nhập (lần cuối)', data: b.usersByDay.map((x) => x.logins), backgroundColor: C.violet, borderRadius: 6 },
+  ] }, options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
   chart($('#cErr'), { type: 'line', data: { labels: c.errorsByDay.map((x) => x.day.slice(5)), datasets: [{ label: 'Số lần báo lỗi', data: c.errorsByDay.map((x) => x.total), borderColor: C.bad, backgroundColor: 'rgba(248,113,113,.15)', fill: true, tension: .35 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
   chart($('#cType'), { type: 'doughnut', data: { labels: Object.keys(c.byType).map((t) => L.deviceType[t]), datasets: [{ data: Object.values(c.byType), backgroundColor: PALETTE, borderWidth: 0 }] }, options: { cutout: '65%', plugins: { legend: { position: 'bottom' } } } });
   chart($('#cEnergy'), { type: 'bar', data: { labels: c.energyByDay.map((x) => x.day.slice(5)), datasets: [{ label: 'kWh', data: c.energyByDay.map((x) => x.totalKwh), backgroundColor: C.ice, borderRadius: 6 }] }, options: { plugins: { legend: { display: false } } } });
@@ -547,12 +578,121 @@ VIEWS.maintenance = async () => {
   if ($('#runMt')) $('#runMt').onclick = async () => { const r = await run(() => api('/admin/maintenance/run', { method: 'POST' })); if (r) { toast(`Đã gửi ${r.sent}/${r.due} lời nhắc (bỏ qua máy đã nhắc trong 7 ngày)`); go('maintenance'); } };
 };
 
+// ===== 5a. SẢN PHẨM & GIÁ =====
+const productFilter = { q: '', deviceType: '', brand: '', status: 'active', sort: 'newest', page: 1 };
+let brandCache = null;
+async function brandsAll(force) { if (!brandCache || force) brandCache = await api('/brands'); return brandCache; }
+const typeIcon = { AIR_CONDITIONER: 'snow', REFRIGERATOR: 'fridge', FREEZER: 'box' };
+const safeImg = (u) => (/^https?:\/\//i.test(u || '') ? esc(u) : '');
+
+async function productForm(p = {}) {
+  const brands = await brandsAll();
+  if (!brands.length) { toast('Chưa có hãng nào. Hãy thêm hãng trước.', true); return null; }
+  return formModal(p.id ? 'Sửa sản phẩm' : 'Thêm sản phẩm', [
+    { name: 'name', label: 'Tên sản phẩm', required: true, value: p.name, full: true, placeholder: 'Máy lạnh Daikin Inverter 1.5 HP' },
+    { name: 'brandId', label: 'Hãng', type: 'select', options: brands.map((x) => [x.id, x.name]), value: p.brand?.id },
+    { name: 'deviceType', label: 'Loại sản phẩm', type: 'select', options: Object.entries(L.deviceType), value: p.deviceType },
+    { name: 'model', label: 'Mã model', required: true, value: p.model, placeholder: 'FTKB35XVMV' },
+    { name: 'capacity', label: 'Công suất / dung tích', required: true, value: p.capacity, placeholder: '1.5 HP hoặc 335 lít' },
+    { name: 'price', label: 'Giá bán (đ)', type: 'number', required: true, value: p.price, step: '1000' },
+    { name: 'installationCost', label: 'Phí lắp đặt (đ)', type: 'number', value: p.installationCost, step: '1000' },
+    { name: 'coolingCapacity', label: 'Công suất lạnh (BTU)', type: 'number', value: p.coolingCapacity },
+    { name: 'powerConsumption', label: 'Điện năng (kW)', type: 'number', step: '0.01', value: p.powerConsumption },
+    { name: 'energyRating', label: 'Nhãn năng lượng', value: p.energyRating, placeholder: '5 sao', nullable: true },
+    { name: 'warrantyMonths', label: 'Bảo hành (tháng)', type: 'number', value: p.warrantyMonths },
+    { name: 'origin', label: 'Xuất xứ', value: p.origin, placeholder: 'Việt Nam', nullable: true },
+    { name: 'suitableRoomArea', label: 'Diện tích phù hợp', value: p.suitableRoomArea, placeholder: '15 - 20 m²', nullable: true },
+    { name: 'imageUrl', label: 'Link ảnh sản phẩm (https://…)', type: 'url', value: p.imageUrl, full: true, nullable: true },
+    { name: 'features', label: 'Tính năng (phẩy ngăn cách)', type: 'list', value: (p.features || []).join(', '), full: true },
+    { name: 'advantages', label: 'Ưu điểm (phẩy ngăn cách)', type: 'list', value: (p.advantages || []).join(', '), full: true },
+    { name: 'disadvantages', label: 'Nhược điểm (phẩy ngăn cách)', type: 'list', value: (p.disadvantages || []).join(', '), full: true },
+    { name: 'description', label: 'Mô tả sản phẩm', type: 'textarea', value: p.description, full: true, nullable: true },
+    { name: 'inverter', label: 'Có Inverter', type: 'checkbox', value: p.inverter },
+    { name: 'isActive', label: 'Đang bán (hiện trên web)', type: 'checkbox', value: p.id ? p.isActive : true },
+  ], { note: 'Giá và thông tin lưu vào database. Trang web chính (So sánh, Dự toán) đọc trực tiếp dữ liệu này.' });
+}
+
+function showProduct(p, reload) {
+  const rows = [
+    ['Hãng', esc(p.brand.name)], ['Loại', esc(L.deviceType[p.deviceType])], ['Mã model', `<span class="mono">${esc(p.model)}</span>`],
+    ['Công suất / dung tích', esc(p.capacity) + (p.inverter ? ' · Inverter' : '')],
+    ['Công suất lạnh', p.coolingCapacity ? `${p.coolingCapacity.toLocaleString('vi-VN')} BTU` : '—'],
+    ['Điện năng', p.powerConsumption ? `${p.powerConsumption} kW` : '—'], ['Nhãn năng lượng', esc(p.energyRating || '—')],
+    ['Bảo hành', p.warrantyMonths ? `${p.warrantyMonths} tháng` : '—'], ['Xuất xứ', esc(p.origin || '—')],
+    ['Diện tích phù hợp', esc(p.suitableRoomArea || '—')], ['Cập nhật', dt(p.updatedAt)],
+  ];
+  const list = (title, arr) => (arr?.length ? `<h4>${title}</h4><ul class="small">${arr.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '');
+  openDrawer(`
+    <div class="p-hero">${safeImg(p.imageUrl) ? `<img src="${safeImg(p.imageUrl)}" alt="" loading="lazy">` : `<div class="p-ph">${icon(typeIcon[p.deviceType])}</div>`}</div>
+    <h3>${esc(p.name)}</h3>
+    <div class="pill-row">${p.isActive ? badge('ACTIVE', { ACTIVE: 'Đang bán' }) : badge('INACTIVE', { INACTIVE: 'Đang ẩn' })}${p.isDemo ? '<span class="badge b-dim">Dữ liệu mẫu</span>' : ''}</div>
+    <div class="p-price">${money(p.price)}${p.installationCost != null ? `<small>+ lắp đặt ${money(p.installationCost)}</small>` : ''}</div>
+    <dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+    ${p.description ? `<p class="small">${esc(p.description)}</p>` : ''}
+    ${list('Tính năng', p.features)}${list('Ưu điểm', p.advantages)}${list('Nhược điểm', p.disadvantages)}
+    ${can('catalog:write') ? `<div class="row" style="margin-top:14px"><button class="btn primary" id="pEdit">${icon('edit')}Sửa</button>
+      ${p.isActive ? `<button class="btn" id="pHide">Ẩn khỏi web</button>` : `<button class="btn" id="pShow">Bán lại</button>`}
+      <button class="btn danger" id="pDel">${icon('trash')}Xóa hẳn</button></div>` : ''}`);
+  if (!can('catalog:write')) return;
+  $('#pEdit').onclick = async () => { const v = await productForm(p); if (v && await run(() => api(`/products/${p.id}`, { method: 'PATCH', body: v }), 'Đã lưu sản phẩm')) { closeDrawer(); reload(); } };
+  if ($('#pHide')) $('#pHide').onclick = async () => { if (await run(() => api(`/products/${p.id}`, { method: 'PATCH', body: { isActive: false } }), 'Đã ẩn khỏi web')) { closeDrawer(); reload(); } };
+  if ($('#pShow')) $('#pShow').onclick = async () => { if (await run(() => api(`/products/${p.id}`, { method: 'PATCH', body: { isActive: true } }), 'Đã bán lại')) { closeDrawer(); reload(); } };
+  $('#pDel').onclick = async () => {
+    if (!await confirmBox('Xóa hẳn sản phẩm này khỏi database? Nếu sản phẩm đã có thiết bị/dự toán liên quan thì không xóa được, hãy dùng "Ẩn khỏi web".')) return;
+    if (await run(() => api(`/products/${p.id}?hard=true`, { method: 'DELETE' }), 'Đã xóa sản phẩm')) { closeDrawer(); reload(); }
+  };
+}
+
+VIEWS.products = async () => {
+  const brands = await brandsAll(true);
+  $('#view').innerHTML = `<div class="glass card">
+    <div class="card-head"><div class="toolbar">
+      <input type="search" id="pq" placeholder="Tìm tên, model, hãng…" value="${esc(productFilter.q)}">
+      <select id="pt">${opts(L.deviceType, productFilter.deviceType, 'Mọi loại')}</select>
+      <select id="pb"><option value="">Mọi hãng</option>${brands.map((x) => `<option value="${esc(x.slug)}"${x.slug === productFilter.brand ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <select id="pst">${opts({ active: 'Đang bán', hidden: 'Đang ẩn', all: 'Tất cả' }, productFilter.status)}</select>
+      <select id="pso">${opts({ newest: 'Mới thêm', price_asc: 'Giá tăng dần', price_desc: 'Giá giảm dần', name: 'Tên A–Z' }, productFilter.sort)}</select>
+    </div><span class="spacer"></span>${can('catalog:write') ? `<button class="btn" id="addBrand">${icon('plus')}Thêm hãng</button><button class="btn primary" id="addProd">${icon('plus')}Thêm sản phẩm</button>` : ''}</div>
+    <div id="prodBody"><div class="empty">Đang tải…</div></div></div>`;
+  const load = async () => {
+    // Lấy toàn bộ (tối đa 100/trang theo API) rồi lọc trạng thái tại chỗ
+    const q = { q: productFilter.q, deviceType: productFilter.deviceType, brand: productFilter.brand, sort: productFilter.sort, page: productFilter.page, limit: 100 };
+    const res = await api('/products' + qs(q));
+    const items = res.items.filter((p) => (productFilter.status === 'all' ? true : productFilter.status === 'hidden' ? !p.isActive : p.isActive));
+    $('#prodBody').innerHTML = items.length ? `<div class="p-grid">${items.map((p, i) => `
+      <button class="p-card glass ${p.isActive ? '' : 'off'}" data-i="${i}">
+        <div class="p-img">${safeImg(p.imageUrl) ? `<img src="${safeImg(p.imageUrl)}" alt="" loading="lazy">` : icon(typeIcon[p.deviceType])}</div>
+        <div class="p-body"><span class="small muted">${esc(p.brand.name)} · ${esc(L.deviceType[p.deviceType])}</span>
+          <b>${esc(p.name)}</b><span class="small dim mono">${esc(p.model)} · ${esc(p.capacity)}${p.inverter ? ' · Inverter' : ''}</span>
+          <span class="p-pr">${money(p.price)}</span>
+          <span class="small muted">${p.installationCost != null ? `Lắp đặt ${money(p.installationCost)}` : 'Chưa có phí lắp đặt'}${p.warrantyMonths ? ` · BH ${p.warrantyMonths} th` : ''}</span>
+          ${p.isActive ? '' : '<span class="badge b-dim">Đang ẩn</span>'}</div>
+      </button>`).join('')}</div>${pagerHTML(res.pagination)}` : '<div class="empty">Không có sản phẩm phù hợp</div>';
+    $('#prodBody').querySelectorAll('.p-card').forEach((el) => { el.onclick = () => showProduct(items[el.dataset.i], load); });
+    $('#prodBody').querySelectorAll('[data-pg]').forEach((el) => { el.onclick = () => { productFilter.page = +el.dataset.pg; load(); }; });
+  };
+  let t;
+  $('#pq').oninput = (e) => { clearTimeout(t); t = setTimeout(() => { productFilter.q = e.target.value.trim(); productFilter.page = 1; load(); }, 300); };
+  $('#pt').onchange = (e) => { productFilter.deviceType = e.target.value; productFilter.page = 1; load(); };
+  $('#pb').onchange = (e) => { productFilter.brand = e.target.value; productFilter.page = 1; load(); };
+  $('#pst').onchange = (e) => { productFilter.status = e.target.value; load(); };
+  $('#pso').onchange = (e) => { productFilter.sort = e.target.value; productFilter.page = 1; load(); };
+  if ($('#addProd')) $('#addProd').onclick = async () => { const v = await productForm(); if (v && await run(() => api('/products', { method: 'POST', body: v }), 'Đã thêm sản phẩm')) load(); };
+  if ($('#addBrand')) $('#addBrand').onclick = async () => {
+    const v = await formModal('Thêm hãng', [
+      { name: 'name', label: 'Tên hãng', required: true, placeholder: 'Midea' },
+      { name: 'country', label: 'Quốc gia', placeholder: 'Trung Quốc' },
+      { name: 'description', label: 'Giới thiệu', type: 'textarea', full: true },
+    ]);
+    if (v && await run(() => api('/brands', { method: 'POST', body: v }), 'Đã thêm hãng')) VIEWS.products();
+  };
+  await load();
+};
+
 // ===== 5. MODEL & MÃ LỖI =====
-let catalogTab = 'products';
+let catalogTab = 'codes'; // sản phẩm đã chuyển sang trang "Sản phẩm & giá"
 VIEWS.catalog = async () => {
-  $('#view').innerHTML = `<div class="glass card"><div class="card-head"><div class="tabs" id="ctabs">
-      <button data-t="products" class="${catalogTab === 'products' ? 'active' : ''}">Model sản phẩm</button>
-      <button data-t="codes" class="${catalogTab === 'codes' ? 'active' : ''}">Bảng mã lỗi</button></div>
+  $('#view').innerHTML = `<div class="glass card"><div class="card-head"><h3 id="ctabs">${icon('alert')}Bảng mã lỗi</h3>
       <span class="spacer"></span>${can('catalog:write') ? `<button class="btn primary" id="addCat">${icon('plus')}Thêm</button>` : ''}</div><div id="catBody"></div></div>`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('[data-t]'); if (b) { catalogTab = b.dataset.t; VIEWS.catalog(); } };
   if (catalogTab === 'products') {
