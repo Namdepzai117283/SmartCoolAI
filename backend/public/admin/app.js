@@ -661,13 +661,18 @@ VIEWS.products = async () => {
     const res = await api('/products' + qs(q));
     const items = res.items.filter((p) => (productFilter.status === 'all' ? true : productFilter.status === 'hidden' ? !p.isActive : p.isActive));
     $('#prodBody').innerHTML = items.length ? `<div class="p-grid">${items.map((p, i) => `
-      <button class="p-card glass ${p.isActive ? '' : 'off'}" data-i="${i}">
+      <button class="p-card glass ${p.isActive ? '' : 'off'}" data-i="${i}" aria-label="${esc(p.name)}">
         <div class="p-img">${safeImg(p.imageUrl) ? `<img src="${safeImg(p.imageUrl)}" alt="" loading="lazy">` : icon(typeIcon[p.deviceType])}</div>
-        <div class="p-body"><span class="small muted">${esc(p.brand.name)} · ${esc(L.deviceType[p.deviceType])}</span>
-          <b>${esc(p.name)}</b><span class="small dim mono">${esc(p.model)} · ${esc(p.capacity)}${p.inverter ? ' · Inverter' : ''}</span>
+        ${p.isActive ? '' : '<span class="badge b-dim p-flag">Đang ẩn</span>'}
+        <div class="p-name"><b>${esc(p.name)}</b></div>
+        <div class="p-info">
+          <span class="small muted">${esc(p.brand.name)} · ${esc(L.deviceType[p.deviceType])}</span>
+          <b>${esc(p.name)}</b>
+          <span class="small dim mono">${esc(p.model)} · ${esc(p.capacity)}${p.inverter ? ' · Inverter' : ''}</span>
           <span class="p-pr">${money(p.price)}</span>
           <span class="small muted">${p.installationCost != null ? `Lắp đặt ${money(p.installationCost)}` : 'Chưa có phí lắp đặt'}${p.warrantyMonths ? ` · BH ${p.warrantyMonths} th` : ''}</span>
-          ${p.isActive ? '' : '<span class="badge b-dim">Đang ẩn</span>'}</div>
+          <span class="small p-more">Bấm để xem chi tiết / sửa</span>
+        </div>
       </button>`).join('')}</div>${pagerHTML(res.pagination)}` : '<div class="empty">Không có sản phẩm phù hợp</div>';
     $('#prodBody').querySelectorAll('.p-card').forEach((el) => { el.onclick = () => showProduct(items[el.dataset.i], load); });
     $('#prodBody').querySelectorAll('[data-pg]').forEach((el) => { el.onclick = () => { productFilter.page = +el.dataset.pg; load(); }; });
