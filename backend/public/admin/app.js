@@ -45,6 +45,16 @@ const store = {
   get() { try { return JSON.parse(localStorage.getItem('sc_admin') || 'null'); } catch { return null; } },
   set(v) { try { v ? localStorage.setItem('sc_admin', JSON.stringify(v)) : localStorage.removeItem('sc_admin'); } catch { /* bỏ qua */ } },
 };
+// Web chính chuyển sang với #sso=<phiên> → lưu phiên, xóa khỏi thanh địa chỉ, vào thẳng Dashboard
+(function takeSso() {
+  const m = location.hash.match(/^#sso=([^&]+)/);
+  if (!m) return;
+  try {
+    const s = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+    if (s && s.accessToken) store.set({ accessToken: s.accessToken, refreshToken: s.refreshToken });
+  } catch { /* bỏ qua phiên lỗi */ }
+  history.replaceState(null, '', location.pathname + location.search);
+})();
 let session = store.get();
 let me = null;
 let refreshing = null;

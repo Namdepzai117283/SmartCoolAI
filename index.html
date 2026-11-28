@@ -716,9 +716,17 @@ function showErr(m,ok){const e=$('#lgErr');e.hidden=!m;e.textContent=m||'';e.cla
 function paintMe(){const a=store.get(),u=a&&a.user;
  $('#meName').textContent=u?nm(u):'Tài khoản khách';
  $('#meRole').textContent=u?(ROLE_VI[u.role]||u.role):'Chưa đăng nhập';
- const staff=u&&u.role&&u.role!=='USER';const al=$('#adminLink');al.hidden=!staff;al.href=API+'/admin';}
+ const staff=isStaff(u);const al=$('#adminLink');al.hidden=!staff;al.href=API+'/admin';}
+/* Tài khoản quản trị/nhân viên: mở thẳng trang Admin, mang theo phiên đăng nhập (không phải đăng nhập lại) */
+const isStaff=u=>!!(u&&u.role&&u.role!=='USER');
+function adminUrl(){const a=store.get();if(!a||!a.accessToken)return API+'/admin';
+ const sso=btoa(unescape(encodeURIComponent(JSON.stringify({accessToken:a.accessToken,refreshToken:a.refreshToken}))));
+ return API+'/admin#sso='+encodeURIComponent(sso);}
+function openAdmin(){history.replaceState(null,'','#home');location.href=adminUrl();}
 function afterLogin(d,isNew){const tokens=d.tokens||d;store.set({user:d.user,accessToken:tokens.accessToken,refreshToken:tokens.refreshToken},$('#rem').checked);
- paintMe();showErr('');toast((isNew?'Tạo tài khoản thành công. ':'')+'Xin chào '+nm(d.user)+'!');location.hash='home';}
+ paintMe();showErr('');
+ if(isStaff(d.user)){showErr('Đăng nhập quản trị thành công. Đang mở trang Admin…',true);return openAdmin();}
+ toast((isNew?'Tạo tài khoản thành công. ':'')+'Xin chào '+nm(d.user)+'!');location.hash='home';}
 let mode='login';
 function setMode(m){mode=m;const reg=m==='register';$('#nameField').hidden=!reg;$('#lgTitle').textContent=reg?'Đăng ký':'Đăng nhập';
  $('#lgSub').textContent=reg?'Tạo tài khoản để lưu lịch sử chẩn đoán, dự toán và thiết bị của bạn.':'Đăng nhập để khám phá các tính năng điện lạnh thông minh.';
@@ -750,6 +758,7 @@ $('#gBtn').addEventListener('click',async()=>{const b=$('#gBtn');b.disabled=true
   if(!gCfg.enabled)showErr('Máy chủ chưa bật đăng nhập Google. Cần đặt biến GOOGLE_CLIENT_ID trên Render (xem hướng dẫn mục 5 trong docs/DATABASE_SERVER.md). Trong lúc chờ, bạn đăng nhập bằng email.');
   else{showErr('');await initGoogle();google.accounts.id.prompt();}}
  catch(err){showErr(err.message);}finally{b.disabled=false;}});
+$('#adminLink').addEventListener('click',e=>{e.preventDefault();window.open(adminUrl(),'_blank','noopener');});
 paintMe();initGoogle();
 if(store.get()&&location.hash==='')location.hash='home';
 
