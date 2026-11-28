@@ -282,7 +282,7 @@ const VIEWS = {};
 
 // ===== 1. TỔNG QUAN =====
 VIEWS.dashboard = async () => {
-  const data = await api('/admin/dashboard');
+  const [data, demo] = await Promise.all([api('/admin/dashboard'), api('/admin/demo-data').catch(() => ({ total: 0 }))]);
   const k = data.kpi;
   const kpi = (label, value, sub, ic, color) => `<div class="glass kpi" style="--c:${color}"><span class="label">${icon(ic)}${label}</span><span class="value">${value}</span><span class="sub">${sub}</span></div>`;
   const b = data.business;
@@ -309,7 +309,7 @@ VIEWS.dashboard = async () => {
           { label: 'Đắt nhất', num: true, render: (r) => money(r.max) },
         ], b.priceByType, { empty: 'Chưa có sản phẩm nào đang bán' })}</div>
     </div>
-    <div class="sec-title">${icon('thermo')}Thiết bị IoT & dịch vụ</div>
+    <div class="sec-title">${icon('thermo')}Thiết bị IoT & dịch vụ ${demo.total ? `<span class="badge b-warn">có ${demo.devices} thiết bị mẫu</span> <button class="btn sm" id="goDemo">Xóa dữ liệu mẫu</button>` : '<span class="badge b-ok">dữ liệu thật</span>'}</div>
     <div class="kpis">
       ${kpi('Thiết bị đang hoạt động', k.online, `/${k.totalDevices} thiết bị`, 'zap', C.ok)}
       ${kpi('Ngoại tuyến (offline)', k.offline, 'không gửi dữ liệu', 'info', C.muted)}
@@ -333,6 +333,7 @@ VIEWS.dashboard = async () => {
           </div>`).join('') : '<div class="empty">Không có thiết bị nào đang lỗi 🎉</div>'}</div></div>
     </div>`;
   $('#seeUsers').onclick = () => go('users');
+  if ($('#goDemo')) $('#goDemo').onclick = () => go('settings');
   $('#seeProducts').onclick = () => go('products');
   $('#alerts').onclick = (e) => { const b = e.target.closest('[data-dev]'); if (b) showDevice(data.urgentAlerts[b.dataset.dev].deviceId); };
   const c = data.charts;
@@ -962,6 +963,22 @@ VIEWS.settings = async () => {
     const body = {};
     for (const s of list) { const el = e.target.elements[s.key]; body[s.key] = typeof s.value === 'boolean' ? el.checked : Number(el.value); }
     await run(() => api('/admin/settings', { method: 'PUT', body }), 'Đã lưu cấu hình – mọi thay đổi được ghi vào nhật ký');
+  };
+  // ----- Dữ liệu mẫu -----
+  const demo = await api('/admin/demo-data');
+  const isSuper = me.role === 'ADMIN';
+  const items = [['Thiết bị IoT mẫu', demo.devices], ['Phiếu dịch vụ mẫu', demo.tickets], ['Khách hàng mẫu', demo.customers], ['Thông báo mẫu', demo.notifications], ['Dự toán / chẩn đoán mẫu', demo.estimates + demo.diagnoses], ['So sánh / hội thoại mẫu', demo.comparisons + demo.conversations]];
+  $('#view').insertAdjacentHTML('beforeend', `<div class="glass card" id="demoCard" style="margin-top:16px"><div class="card-head"><h3>${icon('trash')}Dữ liệu mẫu (để demo)</h3><span class="spacer"></span>
+    ${demo.total && isSuper ? `<button class="btn danger" id="clearDemo">${icon('trash')}Xóa toàn bộ dữ liệu mẫu</button>` : ''}</div>
+    ${demo.total ? `<p class="muted small" style="margin-bottom:10px">Các bản ghi do lệnh seed tạo ra. Xóa đi thì Admin chỉ còn dữ liệu thật. <b>Vẫn giữ</b>: sản phẩm & giá, hãng, mã lỗi, bài viết, cấu hình, tài khoản admin/nhân viên và tài khoản demo@smartcool.vn.${isSuper ? '' : ' Chỉ Super Admin được xóa.'}</p>
+      <dl class="kv">${items.map(([k, v]) => `<dt>${k}</dt><dd><b>${v}</b></dd>`).join('')}</dl>`
+    : `<div class="empty">Không còn dữ liệu mẫu – mọi số liệu trên Admin là dữ liệu thật ✅</div>`}</div>`);
+  if ($('#clearDemo')) $('#clearDemo').onclick = async () => {
+    const v = await formModal('Xóa toàn bộ dữ liệu mẫu?', [{ name: 'confirm', label: 'Gõ XOA để xác nhận', required: true, placeholder: 'XOA', full: true }],
+      { submit: 'Xóa vĩnh viễn', note: `Sẽ xóa ${demo.total} bản ghi mẫu (thiết bị, thông số, phiếu, khách hàng mẫu…). <b>Không hoàn tác được.</b>` });
+    if (!v) return;
+    const r = await run(() => api('/admin/demo-data/clear', { method: 'POST', body: { confirm: String(v.confirm).trim().toUpperCase() } }));
+    if (r) { toast(`Đã xóa: ${r.deleted.devices} thiết bị, ${r.deleted.tickets} phiếu, ${r.deleted.customers} khách hàng mẫu`); go('settings'); }
   };
 };
 

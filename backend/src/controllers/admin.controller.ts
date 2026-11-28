@@ -9,12 +9,15 @@ import { maintenanceService } from '../services/maintenance.service';
 import { notificationService } from '../services/notification.service';
 import { settingService } from '../services/setting.service';
 import { auditService } from '../services/audit.service';
+import { demoDataService } from '../services/demoData.service';
 
 // Controller mỏng: đọc request → gọi Service → trả JSON
 export const adminController = {
   me: handle((req) => adminService.me(actorOf(req))),
   stats: handle(() => adminService.stats()),
   dashboard: handle(() => dashboardService.overview()),
+  demoSummary: handle(() => demoDataService.summary()),
+  clearDemo: handle((req) => demoDataService.clear(actorOf(req), req.body)),
 
   // Người dùng & nhân viên
   listUsers: handle((req) => adminService.listUsers(req.query)),

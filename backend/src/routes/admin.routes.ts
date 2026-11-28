@@ -16,6 +16,10 @@ router.get('/me', c.me);
 router.get('/stats', p('dashboard:read'), c.stats);
 router.get('/dashboard', p('dashboard:read'), c.dashboard);
 
+// Dữ liệu mẫu (seed): xem số lượng / xóa hết (chỉ Super Admin)
+router.get('/demo-data', p('dashboard:read'), c.demoSummary);
+router.post('/demo-data/clear', p('settings:write'), c.clearDemo);
+
 // 1. Người dùng, kỹ thuật viên, phân quyền
 router.get('/users', p('users:read'), c.listUsers);
 router.get('/users/:id', p('users:read'), c.getUser);
